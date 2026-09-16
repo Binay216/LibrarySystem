@@ -1,0 +1,27 @@
+@model Borrower
+@{
+    ViewData["Title"] = "Borrower Details";
+}
+
+<h1>@Model.FirstName @Model.LastName</h1>
+
+<dl class="row">
+    <dt class="col-sm-2">Email</dt>
+    <dd class="col-sm-10">@Model.Email</dd>
+
+    <dt class="col-sm-2">Phone</dt>
+    <dd class="col-sm-10">@Model.Phone</dd>
+
+    <dt class="col-sm-2">Address</dt>
+    <dd class="col-sm-10">@Model.Address</dd>
+
+    <dt class="col-sm-2">Member Since</dt>
+    <dd class="col-sm-10">@Model.MembershipDate.ToString("d")</dd>
+
+    <dt class="col-sm-2">Status</dt>
+    <dd class="col-sm-10">@(Model.IsActive ? "Active" : "Inactive")</dd>
+</dl>
+
+<a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Edit</a>
+<a asp-action="History" asp-route-id="@Model.Id" class="btn btn-outline-primary">Loan History</a>
+<a asp-action="Index" class="btn btn-secondary">Back to List</a>

@@ -1,0 +1,109 @@
+@model ItemFormViewModel
+
+<input type="hidden" asp-for="Id" />
+
+<div class="mb-3">
+    <label asp-for="ItemType" class="form-label"></label>
+    @if (Model.Id == 0)
+    {
+        <select asp-for="ItemType" class="form-select" id="ItemType">
+            <option value="Book">Book</option>
+            <option value="Music">Music</option>
+            <option value="Toy">Toy</option>
+        </select>
+    }
+    else
+    {
+        <input value="@Model.ItemType" class="form-control" disabled />
+        <input type="hidden" asp-for="ItemType" />
+    }
+    <span asp-validation-for="ItemType" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="Name" class="form-label"></label>
+    <input asp-for="Name" class="form-control" />
+    <span asp-validation-for="Name" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="Description" class="form-label"></label>
+    <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+    <span asp-validation-for="Description" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="LibraryCode" class="form-label"></label>
+    <input asp-for="LibraryCode" class="form-control" />
+    <span asp-validation-for="LibraryCode" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="Status" class="form-label"></label>
+    <select asp-for="Status" asp-items="Html.GetEnumSelectList<ItemStatus>()" class="form-select"></select>
+    <span asp-validation-for="Status" class="text-danger"></span>
+</div>
+
+<fieldset class="item-type-fields" data-item-type="Book">
+    <legend class="h6">Book details</legend>
+    <div class="mb-3">
+        <label asp-for="Author" class="form-label"></label>
+        <input asp-for="Author" class="form-control" />
+        <span asp-validation-for="Author" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Genre" class="form-label"></label>
+        <input asp-for="Genre" class="form-control" />
+        <span asp-validation-for="Genre" class="text-danger"></span>
+    </div>
+</fieldset>
+
+<fieldset class="item-type-fields" data-item-type="Music">
+    <legend class="h6">Music details</legend>
+    <div class="mb-3">
+        <label asp-for="Artist" class="form-label"></label>
+        <input asp-for="Artist" class="form-control" />
+        <span asp-validation-for="Artist" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Year" class="form-label"></label>
+        <input asp-for="Year" class="form-control" />
+        <span asp-validation-for="Year" class="text-danger"></span>
+    </div>
+</fieldset>
+
+<fieldset class="item-type-fields" data-item-type="Toy">
+    <legend class="h6">Toy details</legend>
+    <div class="mb-3">
+        <label asp-for="ToyType" class="form-label"></label>
+        <input asp-for="ToyType" class="form-control" />
+        <span asp-validation-for="ToyType" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="RecommendedAge" class="form-label"></label>
+        <input asp-for="RecommendedAge" class="form-control" />
+        <span asp-validation-for="RecommendedAge" class="text-danger"></span>
+    </div>
+</fieldset>
+
+<script>
+    (function () {
+        var typeSelect = document.getElementById('ItemType');
+        var fieldsets = document.querySelectorAll('.item-type-fields');
+
+        function showFieldsFor(type) {
+            fieldsets.forEach(function (fs) {
+                fs.style.display = fs.dataset.itemType === type ? '' : 'none';
+            });
+        }
+
+        var currentType = typeSelect ? typeSelect.value : '@Model.ItemType';
+        showFieldsFor(currentType);
+
+        if (typeSelect) {
+            typeSelect.addEventListener('change', function () {
+                showFieldsFor(typeSelect.value);
+            });
+        }
+    })();
+</script>

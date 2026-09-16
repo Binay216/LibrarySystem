@@ -1,0 +1,40 @@
+@model ReturnViewModel
+@inject Microsoft.Extensions.Options.IOptions<LibrarySystem.Services.FinePolicyOptions> FinePolicy
+@{
+    ViewData["Title"] = "Return an Item";
+    var policy = FinePolicy.Value;
+}
+
+<h1>Return an Item</h1>
+
+@if (TempData["StatusMessage"] is string statusMessage)
+{
+    <div class="alert alert-success">@statusMessage</div>
+}
+
+<form asp-action="Return" method="post" class="col-md-6">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="mb-3">
+        <label asp-for="LibraryCode" class="form-label"></label>
+        <input asp-for="LibraryCode" class="form-control" autofocus />
+        <span asp-validation-for="LibraryCode" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Condition" class="form-label"></label>
+        <select asp-for="Condition" class="form-select">
+            <option value="Available">Returned - no damage</option>
+            <option value="Damaged">Damaged (+@policy.DamagedSurcharge.ToString("C") surcharge)</option>
+            <option value="Destroyed">Lost / Destroyed (+@policy.DestroyedReplacementFee.ToString("C") replacement fee)</option>
+        </select>
+        <span asp-validation-for="Condition" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary"><i class="bi bi-box-arrow-in-left me-1" aria-hidden="true"></i>Return</button>
+    <a asp-action="Index" class="btn btn-secondary">Back</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

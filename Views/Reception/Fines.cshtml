@@ -1,0 +1,58 @@
+@model List<OutstandingFineViewModel>
+@{
+    ViewData["Title"] = "Outstanding Fines";
+    var succeeded = TempData["StatusSucceeded"] is bool s && s;
+}
+
+<h1>Outstanding Fines</h1>
+<p class="text-muted">Returned loans with a fine that has not yet been paid.</p>
+
+@if (TempData["StatusMessage"] is string statusMessage)
+{
+    <div class="alert @(succeeded ? "alert-success" : "alert-danger")">@statusMessage</div>
+}
+
+@if (Model.Count == 0)
+{
+    <div class="empty-state empty-state-positive">
+        <i class="bi bi-check-circle" aria-hidden="true"></i>
+        <p class="mb-0">No outstanding fines.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Library Code</th>
+                    <th>Borrower</th>
+                    <th>Contact</th>
+                    <th>Returned</th>
+                    <th>Fine</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var fine in Model)
+                {
+                    <tr>
+                        <td>@fine.ItemName</td>
+                        <td>@fine.LibraryCode</td>
+                        <td>@fine.BorrowerName</td>
+                        <td class="small">@fine.BorrowerPhone<br />@fine.BorrowerEmail</td>
+                        <td>@(fine.ReturnedDate?.ToString("d") ?? "-")</td>
+                        <td class="fw-semibold">@fine.FineAmount.ToString("C")</td>
+                        <td>
+                            <form asp-action="MarkFinePaid" method="post" class="d-inline">
+                                <input type="hidden" name="loanId" value="@fine.LoanId" />
+                                <button type="submit" class="btn btn-sm btn-success"><i class="bi bi-check-lg me-1" aria-hidden="true"></i>Mark Paid</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

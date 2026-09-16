@@ -1,0 +1,38 @@
+@model Item
+@{
+    ViewData["Title"] = "Delete Item";
+    bool hasLoanHistory = ViewBag.HasLoanHistory;
+}
+
+<h1>Delete Item</h1>
+
+@if (hasLoanHistory)
+{
+    <div class="alert alert-warning">
+        <strong>'@Model.Name'</strong> has loan history and can't be deleted. Set its
+        status to <strong>Destroyed</strong> from the <a asp-action="Edit" asp-route-id="@Model.Id">edit page</a> instead.
+    </div>
+}
+else
+{
+    <p>Are you sure you want to delete <strong>'@Model.Name'</strong>? This can't be undone.</p>
+}
+
+<dl class="row">
+    <dt class="col-sm-2">Library Code</dt>
+    <dd class="col-sm-10">@Model.LibraryCode</dd>
+    <dt class="col-sm-2">Status</dt>
+    <dd class="col-sm-10"><partial name="_StatusBadge" model="@Model.Status" /></dd>
+</dl>
+
+@if (!hasLoanHistory)
+{
+    <form asp-action="Delete" asp-route-id="@Model.Id" method="post">
+        <button type="submit" class="btn btn-danger">Delete</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+    </form>
+}
+else
+{
+    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+}

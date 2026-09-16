@@ -1,0 +1,78 @@
+@model HomeViewModel
+@{
+    ViewData["Title"] = "Home";
+
+    var availableCount = Model.ItemStatus.CountsByStatus.FirstOrDefault(s => s.Status == ItemStatus.Available)?.Count ?? 0;
+    var typeCounts = Model.ItemStatus.BreakdownByType
+        .Select(t => new { t.TypeLabel, Total = t.Available + t.Borrowed + t.Damaged + t.Destroyed })
+        .ToList();
+    var totalItems = typeCounts.Sum(t => t.Total);
+    var featured = Model.FeaturedItems;
+}
+
+<section class="hero-section rounded-4 p-4 p-md-5 mb-5 text-center">
+    <h1 class="display-5 fw-bold mb-3">LibrarySystem</h1>
+    <p class="lead mb-4">Search our catalog of books, music and toys, borrow at the front desk, and track it all in one place.</p>
+    <a asp-controller="Catalog" asp-action="Index" class="btn btn-primary btn-lg"><i class="bi bi-search me-1" aria-hidden="true"></i>Search the Catalog</a>
+</section>
+
+<section class="mb-5">
+    <div class="row row-cols-2 row-cols-md-5 g-3 text-center">
+        <div class="col">
+            <div class="stat-tile rounded-3 p-3 h-100">
+                <div class="display-6 fw-bold text-accent">@totalItems</div>
+                <div class="text-muted small">Items in the catalog</div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-tile rounded-3 p-3 h-100">
+                <div class="display-6 fw-bold text-accent">@availableCount</div>
+                <div class="text-muted small">Available right now</div>
+            </div>
+        </div>
+        @foreach (var type in typeCounts)
+        {
+            <div class="col">
+                <div class="stat-tile rounded-3 p-3 h-100">
+                    <div class="display-6 fw-bold text-accent">@type.Total</div>
+                    <div class="text-muted small">@Pluralize(type.TypeLabel, type.Total)</div>
+                </div>
+            </div>
+        }
+    </div>
+</section>
+
+@if (featured.Count > 0)
+{
+    <section class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h4 mb-0">Featured Items</h2>
+            <a asp-controller="Catalog" asp-action="Index" class="btn btn-outline-primary btn-sm">Browse All</a>
+        </div>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3">
+            @foreach (var item in featured)
+            {
+                <div class="col">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="mb-2"><partial name="_TypeBadge" model="@item.TypeLabel" /></div>
+                            <h5 class="card-title">@item.Name</h5>
+                            <p class="card-text text-muted small">@item.Summary</p>
+                        </div>
+                        <div class="card-footer text-muted small">
+                            <a asp-controller="Catalog" asp-action="Index" asp-route-SearchTerm="@item.Name" class="stretched-link text-decoration-none">@item.LibraryCode</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+}
+
+@functions {
+    private static string Pluralize(string typeLabel, int count) => typeLabel switch
+    {
+        "Music" => "Music",
+        _ => count == 1 ? typeLabel : typeLabel + "s"
+    };
+}

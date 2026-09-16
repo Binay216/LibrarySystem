@@ -1,0 +1,12 @@
+@model ItemStatus
+@{
+    var badgeClass = Model switch
+    {
+        ItemStatus.Available => "text-bg-success",
+        ItemStatus.Borrowed => "text-bg-warning",
+        ItemStatus.Damaged => "text-bg-danger",
+        ItemStatus.Destroyed => "text-bg-dark",
+        _ => "text-bg-secondary"
+    };
+}
+<span class="badge @badgeClass">@Model</span>

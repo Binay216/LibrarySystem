@@ -1,0 +1,198 @@
+using LibrarySystem.Data;
+using LibrarySystem.Models;
+using LibrarySystem.Models.Enums;
+using LibrarySystem.Models.ViewModels;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+
+namespace LibrarySystem.Services
+{
+    /// <inheritdoc cref="ILoanService" />
+    public class LoanService(ApplicationDbContext context, IOptions<FinePolicyOptions> finePolicyOptions, ILibraryClock clock) : ILoanService
+    {
+        private readonly FinePolicyOptions _finePolicy = finePolicyOptions.Value;
+
+        /// <inheritdoc />
+        public async Task<LoanResult> BorrowAsync(string libraryCode, int borrowerId)
+        {
+            var item = await context.Items.FirstOrDefaultAsync(i => i.LibraryCode == libraryCode.Trim());
+            if (item is null)
+            {
+                return LoanResult.Failure($"No item found with library code '{libraryCode}'.");
+            }
+
+            if (item.Status != ItemStatus.Available)
+            {
+                return LoanResult.Failure($"'{item.Name}' is not available to borrow (status: {item.Status}).");
+            }
+
+            var borrower = await context.Borrowers.FindAsync(borrowerId);
+            if (borrower is null || !borrower.IsActive)
+            {
+                return LoanResult.Failure("Select a valid, active borrower.");
+            }
+
+            var today = clock.Today;
+            var loan = new Loan
+            {
+                ItemId = item.Id,
+                BorrowerId = borrower.Id,
+                BorrowedDate = today,
+                DueDate = today.AddDays(_finePolicy.LoanPeriodDays)
+            };
+
+            item.Status = ItemStatus.Borrowed;
+            context.Loans.Add(loan);
+            await context.SaveChangesAsync();
+
+            return LoanResult.Success(loan, $"'{item.Name}' borrowed by {borrower.FirstName} {borrower.LastName}. Due back {loan.DueDate:d}.");
+        }
+
+        /// <inheritdoc />
+        public async Task<LoanResult> ReturnAsync(string libraryCode, ItemStatus resultingStatus)
+        {
+            var item = await context.Items.FirstOrDefaultAsync(i => i.LibraryCode == libraryCode.Trim());
+            if (item is null)
+            {
+                return LoanResult.Failure($"No item found with library code '{libraryCode}'.");
+            }
+
+            var loan = await context.Loans
+                .Where(l => l.ItemId == item.Id && l.ReturnedDate == null)
+                .OrderByDescending(l => l.BorrowedDate)
+                .FirstOrDefaultAsync();
+
+            if (loan is null)
+            {
+                return LoanResult.Failure($"'{item.Name}' is not currently on loan.");
+            }
+
+            var today = clock.Today;
+            loan.ReturnedDate = today;
+            loan.FineAmount = CalculateFine(loan.DueDate, today, resultingStatus);
+            item.Status = resultingStatus;
+
+            await context.SaveChangesAsync();
+
+            var message = loan.FineAmount > 0
+                ? $"'{item.Name}' returned. Fine due: {loan.FineAmount:C}."
+                : $"'{item.Name}' returned. No fine due.";
+
+            return LoanResult.Success(loan, message);
+        }
+
+        /// <inheritdoc />
+        public decimal CalculateFine(DateTime dueDate, DateTime returnedDate, ItemStatus resultingStatus)
+        {
+            var daysLate = Math.Max(0, (returnedDate.Date - dueDate.Date).Days);
+            var lateFee = Math.Min(daysLate * _finePolicy.DailyLateFee, _finePolicy.MaximumFine);
+
+            var surcharge = resultingStatus switch
+            {
+                ItemStatus.Damaged => _finePolicy.DamagedSurcharge,
+                ItemStatus.Destroyed => _finePolicy.DestroyedReplacementFee,
+                _ => 0m
+            };
+
+            return lateFee + surcharge;
+        }
+
+        /// <inheritdoc />
+        public async Task<List<OverdueLoanViewModel>> GetOverdueLoansAsync()
+        {
+            var today = clock.Today;
+
+            var overdueLoans = await context.Loans
+                .Include(l => l.Item)
+                .Include(l => l.Borrower)
+                .Where(l => l.ReturnedDate == null && l.DueDate < today)
+                .OrderBy(l => l.DueDate)
+                .ToListAsync();
+
+            return overdueLoans.Select(loan => new OverdueLoanViewModel
+            {
+                LoanId = loan.Id,
+                ItemName = loan.Item!.Name,
+                LibraryCode = loan.Item.LibraryCode,
+                BorrowerName = $"{loan.Borrower!.FirstName} {loan.Borrower.LastName}",
+                BorrowerPhone = loan.Borrower.Phone,
+                BorrowerEmail = loan.Borrower.Email,
+                DueDate = loan.DueDate,
+                DaysOverdue = (today - loan.DueDate).Days,
+                EstimatedFine = CalculateFine(loan.DueDate, today, ItemStatus.Available)
+            }).ToList();
+        }
+
+        /// <inheritdoc />
+        public async Task<List<OutstandingFineViewModel>> GetOutstandingFinesAsync()
+        {
+            var unpaidLoans = await context.Loans
+                .Include(l => l.Item)
+                .Include(l => l.Borrower)
+                .Where(l => l.FineAmount > 0 && !l.FinePaid)
+                .OrderByDescending(l => l.ReturnedDate)
+                .ToListAsync();
+
+            return unpaidLoans.Select(loan => new OutstandingFineViewModel
+            {
+                LoanId = loan.Id,
+                ItemName = loan.Item!.Name,
+                LibraryCode = loan.Item.LibraryCode,
+                BorrowerName = $"{loan.Borrower!.FirstName} {loan.Borrower.LastName}",
+                BorrowerPhone = loan.Borrower.Phone,
+                BorrowerEmail = loan.Borrower.Email,
+                ReturnedDate = loan.ReturnedDate,
+                FineAmount = loan.FineAmount
+            }).ToList();
+        }
+
+        /// <inheritdoc />
+        public async Task<LoanResult> MarkFinePaidAsync(int loanId)
+        {
+            var loan = await context.Loans.Include(l => l.Item).FirstOrDefaultAsync(l => l.Id == loanId);
+            if (loan is null)
+            {
+                return LoanResult.Failure("Loan not found.");
+            }
+
+            if (loan.FineAmount <= 0)
+            {
+                return LoanResult.Failure("This loan has no fine to pay.");
+            }
+
+            if (loan.FinePaid)
+            {
+                return LoanResult.Failure("This fine is already marked as paid.");
+            }
+
+            loan.FinePaid = true;
+            await context.SaveChangesAsync();
+
+            return LoanResult.Success(loan, $"Fine of {loan.FineAmount:C} for '{loan.Item!.Name}' marked as paid.");
+        }
+
+        /// <inheritdoc />
+        public async Task<List<LoanHistoryEntryViewModel>> GetLoanHistoryAsync(int borrowerId)
+        {
+            var today = clock.Today;
+
+            var loans = await context.Loans
+                .Include(l => l.Item)
+                .Where(l => l.BorrowerId == borrowerId)
+                .OrderByDescending(l => l.BorrowedDate)
+                .ToListAsync();
+
+            return loans.Select(loan => new LoanHistoryEntryViewModel
+            {
+                ItemName = loan.Item!.Name,
+                LibraryCode = loan.Item.LibraryCode,
+                BorrowedDate = loan.BorrowedDate,
+                DueDate = loan.DueDate,
+                ReturnedDate = loan.ReturnedDate,
+                IsOverdue = loan.ReturnedDate == null && loan.DueDate < today,
+                FineAmount = loan.FineAmount,
+                FinePaid = loan.FinePaid
+            }).ToList();
+        }
+    }
+}

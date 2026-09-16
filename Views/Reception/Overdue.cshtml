@@ -1,0 +1,62 @@
+@model List<OverdueLoanViewModel>
+@{
+    ViewData["Title"] = "Overdue Items";
+}
+
+<h1>Overdue Items</h1>
+<p class="text-muted">Loans still out past their due date, most overdue first.</p>
+
+@if (Model.Count == 0)
+{
+    <div class="empty-state empty-state-positive">
+        <i class="bi bi-check-circle" aria-hidden="true"></i>
+        <p class="mb-0">Nothing overdue right now.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Library Code</th>
+                    <th>Borrower</th>
+                    <th>Contact</th>
+                    <th>Due Date</th>
+                    <th>Days Overdue</th>
+                    <th>Estimated Fine</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var loan in Model)
+                {
+                    <tr class="@RowClass(loan.DaysOverdue)">
+                        <td>@loan.ItemName</td>
+                        <td>@loan.LibraryCode</td>
+                        <td>@loan.BorrowerName</td>
+                        <td class="small">@loan.BorrowerPhone<br />@loan.BorrowerEmail</td>
+                        <td>@loan.DueDate.ToString("d")</td>
+                        <td><span class="badge @BadgeClass(loan.DaysOverdue)">@loan.DaysOverdue day@(loan.DaysOverdue == 1 ? "" : "s")</span></td>
+                        <td>@loan.EstimatedFine.ToString("C")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@functions {
+    private static string BadgeClass(int daysOverdue) => daysOverdue switch
+    {
+        < 7 => "text-bg-warning",
+        < 14 => "text-bg-danger",
+        _ => "text-bg-dark"
+    };
+
+    private static string RowClass(int daysOverdue) => daysOverdue switch
+    {
+        < 7 => "table-warning",
+        _ => "table-danger"
+    };
+}

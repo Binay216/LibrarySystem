@@ -1,0 +1,142 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem var(--accent);
+}
+
+/*
+ * Single accent colour for the whole site, defined once here and referenced
+ * everywhere below - never hardcoded in a view. Bootstrap bakes most of its
+ * component colours in as literal hex per-component rather than referencing
+ * its own root variables, so retinting "primary" means overriding those
+ * components' own custom properties here, not just --bs-primary.
+ */
+:root {
+  --accent: #7b2d42;
+  --accent-dark: #5c2032;
+  --accent-light: #f5e9ec;
+  --accent-rgb: 123, 45, 66;
+
+  /* Bootstrap's own link colour *is* driven by a root variable - this one just works. */
+  --bs-link-color-rgb: var(--accent-rgb);
+  --bs-link-hover-color-rgb: 92, 32, 50;
+}
+
+.navbar-brand {
+  color: var(--accent) !important;
+  font-weight: 600;
+}
+
+.btn-primary {
+  --bs-btn-bg: var(--accent);
+  --bs-btn-border-color: var(--accent);
+  --bs-btn-hover-bg: var(--accent-dark);
+  --bs-btn-hover-border-color: var(--accent-dark);
+  --bs-btn-active-bg: var(--accent-dark);
+  --bs-btn-active-border-color: var(--accent-dark);
+  --bs-btn-disabled-bg: var(--accent);
+  --bs-btn-disabled-border-color: var(--accent);
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--accent);
+  --bs-btn-border-color: var(--accent);
+  --bs-btn-hover-bg: var(--accent);
+  --bs-btn-hover-border-color: var(--accent);
+  --bs-btn-active-bg: var(--accent);
+  --bs-btn-active-border-color: var(--accent);
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 0.25rem rgba(var(--accent-rgb), 0.25);
+}
+
+.form-check-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 0.25rem rgba(var(--accent-rgb), 0.25);
+}
+
+.form-check-input:checked {
+  background-color: var(--accent);
+  border-color: var(--accent);
+}
+
+.text-accent {
+  color: var(--accent);
+}
+
+.hero-section {
+  background-color: var(--accent-light);
+}
+
+.stat-tile {
+  background-color: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-color);
+}
+
+/* Consistent "nothing here" pattern for every empty table/list in the app. */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--bs-secondary-color);
+}
+
+.empty-state .bi {
+  display: block;
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+  color: var(--bs-border-color);
+}
+
+/* Used where an empty state is good news (nothing overdue, nothing owed). */
+.empty-state-positive .bi {
+  color: var(--bs-success);
+}
+
+/*
+ * Item-type badges (Book/Music/Toy) - one soft, distinguishable tint per type.
+ * Deliberately pastel rather than solid like the status badges: type is
+ * secondary information on a card, status is the thing that should dominate.
+ */
+.badge-type-book {
+  background-color: #dbe7f7;
+  color: #2c5282;
+}
+
+.badge-type-music {
+  background-color: #ede3f7;
+  color: #5b3a8e;
+}
+
+.badge-type-toy {
+  background-color: #fbe8d6;
+  color: #7a4a10;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+
+.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
+  color: var(--bs-secondary-color);
+  text-align: end;
+}
+
+.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
+  text-align: start;
+}

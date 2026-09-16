@@ -1,0 +1,11 @@
+@model string
+@{
+    var badgeClass = Model switch
+    {
+        "Book" => "badge-type-book",
+        "Music" => "badge-type-music",
+        "Toy" => "badge-type-toy",
+        _ => "text-bg-secondary"
+    };
+}
+<span class="badge @badgeClass">@Model</span>

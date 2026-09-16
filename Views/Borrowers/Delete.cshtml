@@ -1,0 +1,38 @@
+@model Borrower
+@{
+    ViewData["Title"] = "Delete Borrower";
+    bool hasLoanHistory = ViewBag.HasLoanHistory;
+}
+
+<h1>Delete Borrower</h1>
+
+@if (hasLoanHistory)
+{
+    <div class="alert alert-warning">
+        <strong>@Model.FirstName @Model.LastName</strong> has loan history and can't be deleted.
+        Set them inactive from the <a asp-action="Edit" asp-route-id="@Model.Id">edit page</a> instead.
+    </div>
+}
+else
+{
+    <p>Are you sure you want to delete <strong>@Model.FirstName @Model.LastName</strong>? This can't be undone.</p>
+}
+
+<dl class="row">
+    <dt class="col-sm-2">Email</dt>
+    <dd class="col-sm-10">@Model.Email</dd>
+    <dt class="col-sm-2">Status</dt>
+    <dd class="col-sm-10">@(Model.IsActive ? "Active" : "Inactive")</dd>
+</dl>
+
+@if (!hasLoanHistory)
+{
+    <form asp-action="Delete" asp-route-id="@Model.Id" method="post">
+        <button type="submit" class="btn btn-danger">Delete</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+    </form>
+}
+else
+{
+    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+}

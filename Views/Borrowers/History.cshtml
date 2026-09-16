@@ -1,0 +1,81 @@
+@model BorrowerHistoryViewModel
+@{
+    ViewData["Title"] = "Loan History";
+}
+
+<h1>Loan History</h1>
+<h5 class="text-muted mb-4">@Model.Borrower.FirstName @Model.Borrower.LastName</h5>
+
+@if (Model.Loans.Count == 0)
+{
+    <div class="empty-state">
+        <i class="bi bi-journal-x" aria-hidden="true"></i>
+        <p class="mb-0">This borrower has no loan history.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Library Code</th>
+                    <th>Borrowed</th>
+                    <th>Due</th>
+                    <th>Returned</th>
+                    <th>Status</th>
+                    <th>Fine</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var loan in Model.Loans)
+                {
+                    <tr class="@(loan.IsOverdue ? "table-danger" : "")">
+                        <td>@loan.ItemName</td>
+                        <td>@loan.LibraryCode</td>
+                        <td>@loan.BorrowedDate.ToString("d")</td>
+                        <td>@loan.DueDate.ToString("d")</td>
+                        <td>@(loan.ReturnedDate?.ToString("d") ?? "-")</td>
+                        <td><span class="badge @StatusBadgeClass(loan)">@StatusLabel(loan)</span></td>
+                        <td>
+                            @if (loan.FineAmount > 0)
+                            {
+                                @loan.FineAmount.ToString("C")
+                                <span class="badge @(loan.FinePaid ? "text-bg-success" : "text-bg-warning")">@(loan.FinePaid ? "Paid" : "Unpaid")</span>
+                            }
+                            else
+                            {
+                                <text>-</text>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<a asp-action="Details" asp-route-id="@Model.Borrower.Id" class="btn btn-secondary">Back to Borrower</a>
+
+@functions {
+    private static string StatusBadgeClass(LoanHistoryEntryViewModel loan)
+    {
+        if (loan.ReturnedDate is not null)
+        {
+            return "text-bg-secondary";
+        }
+
+        return loan.IsOverdue ? "text-bg-danger" : "text-bg-warning";
+    }
+
+    private static string StatusLabel(LoanHistoryEntryViewModel loan)
+    {
+        if (loan.ReturnedDate is not null)
+        {
+            return "Returned";
+        }
+
+        return loan.IsOverdue ? "Overdue" : "On Loan";
+    }
+}

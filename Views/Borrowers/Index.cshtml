@@ -1,0 +1,60 @@
+@model IEnumerable<Borrower>
+@{
+    ViewData["Title"] = "Borrowers";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Borrowers</h1>
+    <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Add Borrower</a>
+</div>
+
+@if (TempData["StatusMessage"] is string statusMessage)
+{
+    <div class="alert alert-success">@statusMessage</div>
+}
+@if (TempData["ErrorMessage"] is string errorMessage)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Member Since</th>
+                <th>Active</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var borrower in Model)
+            {
+                <tr>
+                    <td>@borrower.LastName, @borrower.FirstName</td>
+                    <td>@borrower.Email</td>
+                    <td>@borrower.Phone</td>
+                    <td>@borrower.MembershipDate.ToString("d")</td>
+                    <td>
+                        @if (borrower.IsActive)
+                        {
+                            <span class="badge text-bg-success">Active</span>
+                        }
+                        else
+                        {
+                            <span class="badge text-bg-secondary">Inactive</span>
+                        }
+                    </td>
+                    <td class="text-end">
+                        <a asp-action="Details" asp-route-id="@borrower.Id" class="btn btn-sm btn-outline-secondary">Details</a>
+                        <a asp-action="History" asp-route-id="@borrower.Id" class="btn btn-sm btn-outline-secondary">History</a>
+                        <a asp-action="Edit" asp-route-id="@borrower.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
+                        <a asp-action="Delete" asp-route-id="@borrower.Id" class="btn btn-sm btn-outline-danger">Delete</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

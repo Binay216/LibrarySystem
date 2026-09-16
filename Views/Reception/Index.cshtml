@@ -1,0 +1,53 @@
+@{
+    ViewData["Title"] = "Reception";
+}
+
+<h1>Reception</h1>
+
+<div class="row g-3 mt-2">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Borrow an Item</h5>
+                <p class="card-text">Look up an item by library code and lend it to a borrower.</p>
+                <a asp-action="Borrow" class="btn btn-primary"><i class="bi bi-box-arrow-right me-1" aria-hidden="true"></i>Borrow</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Return an Item</h5>
+                <p class="card-text">Look up an item by library code, record its condition and any fine.</p>
+                <a asp-action="Return" class="btn btn-primary"><i class="bi bi-box-arrow-in-left me-1" aria-hidden="true"></i>Return</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Borrowers</h5>
+                <p class="card-text">View, add, edit or deactivate borrower details.</p>
+                <a asp-controller="Borrowers" asp-action="Index" class="btn btn-primary"><i class="bi bi-people me-1" aria-hidden="true"></i>Manage Borrowers</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Overdue Items</h5>
+                <p class="card-text">Loans past their due date, with days overdue and estimated fines.</p>
+                <a asp-action="Overdue" class="btn btn-primary"><i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>View Overdue</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Outstanding Fines</h5>
+                <p class="card-text">Record payment for fines owed on returned items.</p>
+                <a asp-action="Fines" class="btn btn-primary"><i class="bi bi-cash-coin me-1" aria-hidden="true"></i>View Fines</a>
+            </div>
+        </div>
+    </div>
+</div>

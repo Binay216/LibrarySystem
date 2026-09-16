@@ -1,0 +1,299 @@
+@using System.Text.Json
+@model ManagerDashboardViewModel
+@{
+    ViewData["Title"] = "Manager Dashboard";
+
+    // Fixed, semantic colors reused across every chart on this page - matched
+    // exactly to the Bootstrap classes _StatusBadge.cshtml uses (text-bg-success
+    // etc.), so a status or a fine's paid state reads the same color whether
+    // it's a badge or a chart, anywhere in the app.
+    const string ColorAvailable = "#198754";   // matches badge text-bg-success
+    const string ColorBorrowed = "#ffc107";    // matches badge text-bg-warning
+    const string ColorDamaged = "#dc3545";     // matches badge text-bg-danger
+    const string ColorDestroyed = "#212529";   // matches badge text-bg-dark
+    const string ColorSingleSeries = "#2a78d6";
+    const string ColorPaid = "#198754";        // matches badge text-bg-success
+    const string ColorOutstanding = "#ffc107"; // matches badge text-bg-warning
+    const string GridColor = "#e1e0d9";
+    const string InkColor = "#52514e";
+
+    var loansOverTimeLabels = JsonSerializer.Serialize(Model.Borrowing.LoansOverTime.Select(m => m.Period));
+    var loansOverTimeCounts = JsonSerializer.Serialize(Model.Borrowing.LoansOverTime.Select(m => m.Count));
+
+    var mostBorrowedLabels = JsonSerializer.Serialize(Model.Borrowing.MostBorrowed.Select(m => m.ItemName));
+    var mostBorrowedCounts = JsonSerializer.Serialize(Model.Borrowing.MostBorrowed.Select(m => m.LoanCount));
+
+    var statusLabels = JsonSerializer.Serialize(Model.ItemStatus.CountsByStatus.Select(s => s.Status.ToString()));
+    var statusCounts = JsonSerializer.Serialize(Model.ItemStatus.CountsByStatus.Select(s => s.Count));
+    var statusColors = JsonSerializer.Serialize(Model.ItemStatus.CountsByStatus.Select(s => s.Status switch
+    {
+        ItemStatus.Available => ColorAvailable,
+        ItemStatus.Borrowed => ColorBorrowed,
+        ItemStatus.Damaged => ColorDamaged,
+        ItemStatus.Destroyed => ColorDestroyed,
+        _ => InkColor
+    }));
+
+    var typeLabels = JsonSerializer.Serialize(Model.ItemStatus.BreakdownByType.Select(t => t.TypeLabel));
+    var typeAvailable = JsonSerializer.Serialize(Model.ItemStatus.BreakdownByType.Select(t => t.Available));
+    var typeBorrowed = JsonSerializer.Serialize(Model.ItemStatus.BreakdownByType.Select(t => t.Borrowed));
+    var typeDamaged = JsonSerializer.Serialize(Model.ItemStatus.BreakdownByType.Select(t => t.Damaged));
+    var typeDestroyed = JsonSerializer.Serialize(Model.ItemStatus.BreakdownByType.Select(t => t.Destroyed));
+}
+
+<h1>Manager Dashboard</h1>
+
+<ul class="nav nav-tabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#borrowing-pane" type="button" role="tab">Borrowing</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#status-pane" type="button" role="tab">Item Status</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#fines-pane" type="button" role="tab">Fines</button>
+    </li>
+</ul>
+
+<div class="tab-content pt-4">
+
+    <div class="tab-pane fade show active" id="borrowing-pane" role="tabpanel">
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card h-100 border-start border-success border-4">
+                    <div class="card-body">
+                        <div class="text-muted small">Active Loans</div>
+                        <div class="fs-2">@Model.Borrowing.ActiveLoanCount</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card h-100 border-start border-danger border-4">
+                    <div class="card-body">
+                        <div class="text-muted small">Overdue Loans</div>
+                        <div class="fs-2">@Model.Borrowing.OverdueLoanCount</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-md-6">
+                <h5>Loans Over Time</h5>
+                <div style="height:280px"><canvas id="loansOverTimeChart"></canvas></div>
+            </div>
+            <div class="col-md-6">
+                <h5>Most Borrowed Items</h5>
+                <div style="height:280px"><canvas id="mostBorrowedChart"></canvas></div>
+            </div>
+        </div>
+
+        <h5>Overdue Loans</h5>
+        @if (Model.Borrowing.OverdueLoans.Count == 0)
+        {
+            <p class="text-muted">No items are currently overdue.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead><tr><th>Item</th><th>Library Code</th><th>Borrower</th><th>Due Date</th><th>Days Overdue</th></tr></thead>
+                    <tbody>
+                        @foreach (var loan in Model.Borrowing.OverdueLoans)
+                        {
+                            <tr class="table-danger">
+                                <td>@loan.ItemName</td>
+                                <td>@loan.LibraryCode</td>
+                                <td>@loan.BorrowerName</td>
+                                <td>@loan.DueDate.ToString("d")</td>
+                                <td>@loan.DaysOverdue</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        <h5>Active Loans</h5>
+        @if (Model.Borrowing.ActiveLoans.Count == 0)
+        {
+            <p class="text-muted">No items are currently on loan.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead><tr><th>Item</th><th>Library Code</th><th>Borrower</th><th>Due Date</th></tr></thead>
+                    <tbody>
+                        @foreach (var loan in Model.Borrowing.ActiveLoans)
+                        {
+                            <tr>
+                                <td>@loan.ItemName</td>
+                                <td>@loan.LibraryCode</td>
+                                <td>@loan.BorrowerName</td>
+                                <td>@loan.DueDate.ToString("d")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+    <div class="tab-pane fade" id="status-pane" role="tabpanel">
+        <div class="row g-4 mb-4">
+            <div class="col-md-5">
+                <h5>Items by Status</h5>
+                <div style="height:280px"><canvas id="statusChart"></canvas></div>
+            </div>
+            <div class="col-md-7">
+                <h5>Status by Type</h5>
+                <div style="height:280px"><canvas id="typeStatusChart"></canvas></div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead><tr><th>Type</th><th>Available</th><th>Borrowed</th><th>Damaged</th><th>Destroyed</th></tr></thead>
+                <tbody>
+                    @foreach (var row in Model.ItemStatus.BreakdownByType)
+                    {
+                        <tr>
+                            <td>@row.TypeLabel</td>
+                            <td>@row.Available</td>
+                            <td>@row.Borrowed</td>
+                            <td>@row.Damaged</td>
+                            <td>@row.Destroyed</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="fines-pane" role="tabpanel">
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="text-muted small">Total Accrued</div>
+                        <div class="fs-2">@Model.Fines.TotalAccrued.ToString("C")</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card h-100 border-start border-success border-4">
+                    <div class="card-body">
+                        <div class="text-muted small">Total Paid</div>
+                        <div class="fs-2">@Model.Fines.TotalPaid.ToString("C")</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card h-100 border-start border-warning border-4">
+                    <div class="card-body">
+                        <div class="text-muted small">Total Outstanding</div>
+                        <div class="fs-2">@Model.Fines.TotalOutstanding.ToString("C")</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="text-muted small">Average Fine / Returned Loan</div>
+                        <div class="fs-2">@Model.Fines.AverageFinePerReturnedLoan.ToString("C")</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (Model.Fines.TotalAccrued > 0)
+        {
+            <h5>Paid vs Outstanding</h5>
+            <div style="height:280px; max-width:400px"><canvas id="finesChart"></canvas></div>
+        }
+        else
+        {
+            <p class="text-muted">No fines have been recorded yet.</p>
+        }
+    </div>
+
+</div>
+
+@section Scripts {
+    <script src="~/lib/chart.js/dist/chart.umd.min.js"></script>
+    <script>
+        Chart.defaults.color = '@InkColor';
+        Chart.defaults.borderColor = '@GridColor';
+
+        new Chart(document.getElementById('loansOverTimeChart'), {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(loansOverTimeLabels),
+                datasets: [{ label: 'Loans', data: @Html.Raw(loansOverTimeCounts), backgroundColor: '@ColorSingleSeries' }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+            }
+        });
+
+        new Chart(document.getElementById('mostBorrowedChart'), {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(mostBorrowedLabels),
+                datasets: [{ label: 'Times Borrowed', data: @Html.Raw(mostBorrowedCounts), backgroundColor: '@ColorSingleSeries' }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+            }
+        });
+
+        new Chart(document.getElementById('statusChart'), {
+            type: 'doughnut',
+            data: {
+                labels: @Html.Raw(statusLabels),
+                datasets: [{ data: @Html.Raw(statusCounts), backgroundColor: @Html.Raw(statusColors) }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        new Chart(document.getElementById('typeStatusChart'), {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(typeLabels),
+                datasets: [
+                    { label: 'Available', data: @Html.Raw(typeAvailable), backgroundColor: '@ColorAvailable' },
+                    { label: 'Borrowed', data: @Html.Raw(typeBorrowed), backgroundColor: '@ColorBorrowed' },
+                    { label: 'Damaged', data: @Html.Raw(typeDamaged), backgroundColor: '@ColorDamaged' },
+                    { label: 'Destroyed', data: @Html.Raw(typeDestroyed), backgroundColor: '@ColorDestroyed' }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } } }
+            }
+        });
+
+        @if (Model.Fines.TotalAccrued > 0)
+        {
+            <text>
+            new Chart(document.getElementById('finesChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Paid', 'Outstanding'],
+                    datasets: [{
+                        data: [@Model.Fines.TotalPaid.ToString(System.Globalization.CultureInfo.InvariantCulture), @Model.Fines.TotalOutstanding.ToString(System.Globalization.CultureInfo.InvariantCulture)],
+                        backgroundColor: ['@ColorPaid', '@ColorOutstanding']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+            </text>
+        }
+    </script>
+}

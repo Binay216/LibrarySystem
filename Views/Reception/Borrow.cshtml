@@ -1,0 +1,36 @@
+@model BorrowViewModel
+@{
+    ViewData["Title"] = "Borrow an Item";
+}
+
+<h1>Borrow an Item</h1>
+
+@if (TempData["StatusMessage"] is string statusMessage)
+{
+    <div class="alert alert-success">@statusMessage</div>
+}
+
+<form asp-action="Borrow" method="post" class="col-md-6">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="mb-3">
+        <label asp-for="LibraryCode" class="form-label"></label>
+        <input asp-for="LibraryCode" class="form-control" autofocus />
+        <span asp-validation-for="LibraryCode" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="BorrowerId" class="form-label"></label>
+        <select asp-for="BorrowerId" asp-items="Model.Borrowers" class="form-select">
+            <option value="">-- Select a borrower --</option>
+        </select>
+        <span asp-validation-for="BorrowerId" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary"><i class="bi bi-box-arrow-right me-1" aria-hidden="true"></i>Borrow</button>
+    <a asp-action="Index" class="btn btn-secondary">Back</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
