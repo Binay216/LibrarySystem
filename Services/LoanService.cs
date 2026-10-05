@@ -8,17 +8,23 @@ using Microsoft.Extensions.Options;
 namespace LibrarySystem.Services
 {
     /// <inheritdoc cref="ILoanService" />
-    public class LoanService(ApplicationDbContext context, IOptions<FinePolicyOptions> finePolicyOptions, ILibraryClock clock) : ILoanService
+    public class LoanService(ApplicationDbContext context, IOptions<FinePolicyOptions> finePolicyOptions, ILibraryClock clock, ICurrentBranchAccessor currentBranchAccessor) : ILoanService
     {
         private readonly FinePolicyOptions _finePolicy = finePolicyOptions.Value;
 
         /// <inheritdoc />
         public async Task<LoanResult> BorrowAsync(string libraryCode, int borrowerId)
         {
-            var item = await context.Items.FirstOrDefaultAsync(i => i.LibraryCode == libraryCode.Trim());
+            var item = await context.Items.Include(i => i.CurrentBranch).FirstOrDefaultAsync(i => i.LibraryCode == libraryCode.Trim());
             if (item is null)
             {
                 return LoanResult.Failure($"No item found with library code '{libraryCode}'.");
+            }
+
+            var currentBranch = await currentBranchAccessor.GetCurrentBranchAsync();
+            if (item.CurrentBranchId != currentBranch.Id)
+            {
+                return LoanResult.Failure($"'{item.Name}' is at {item.CurrentBranch!.Name}, not {currentBranch.Name}.");
             }
 
             if (item.Status != ItemStatus.Available)
@@ -37,6 +43,7 @@ namespace LibrarySystem.Services
             {
                 ItemId = item.Id,
                 BorrowerId = borrower.Id,
+                BorrowedAtBranchId = currentBranch.Id,
                 BorrowedDate = today,
                 DueDate = today.AddDays(_finePolicy.LoanPeriodDays)
             };
@@ -67,8 +74,13 @@ namespace LibrarySystem.Services
                 return LoanResult.Failure($"'{item.Name}' is not currently on loan.");
             }
 
+            // Deliberately no branch check here - a return at a different branch
+            // from the item's CurrentBranchId is allowed. CurrentBranchId is left
+            // as-is; reconciling it is a transfer, not something a return does.
+            var currentBranch = await currentBranchAccessor.GetCurrentBranchAsync();
             var today = clock.Today;
             loan.ReturnedDate = today;
+            loan.ReturnedAtBranchId = currentBranch.Id;
             loan.FineAmount = CalculateFine(loan.DueDate, today, resultingStatus);
             item.Status = resultingStatus;
 
@@ -101,11 +113,12 @@ namespace LibrarySystem.Services
         public async Task<List<OverdueLoanViewModel>> GetOverdueLoansAsync()
         {
             var today = clock.Today;
+            var currentBranch = await currentBranchAccessor.GetCurrentBranchAsync();
 
             var overdueLoans = await context.Loans
                 .Include(l => l.Item)
                 .Include(l => l.Borrower)
-                .Where(l => l.ReturnedDate == null && l.DueDate < today)
+                .Where(l => l.ReturnedDate == null && l.DueDate < today && l.BorrowedAtBranchId == currentBranch.Id)
                 .OrderBy(l => l.DueDate)
                 .ToListAsync();
 

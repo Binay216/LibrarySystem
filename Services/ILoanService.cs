@@ -6,13 +6,24 @@ namespace LibrarySystem.Services
     /// <summary>Borrowing, returning and fine calculation for reception.</summary>
     public interface ILoanService
     {
-        /// <summary>Borrows an available item, identified by its library code, out to a borrower.</summary>
+        /// <summary>
+        /// Borrows an available item, identified by its library code, out to a
+        /// borrower. The item must be physically at the branch this app instance is
+        /// configured as (<see cref="ICurrentBranchAccessor"/>) - if it's at another
+        /// branch, the failure message names which one. Records
+        /// <see cref="Loan.BorrowedAtBranchId"/> as the current branch.
+        /// </summary>
         Task<LoanResult> BorrowAsync(string libraryCode, int borrowerId);
 
         /// <summary>
         /// Returns the item currently on loan under the given library code, computing
         /// and recording its fine. <paramref name="resultingStatus"/> is the item's
-        /// condition on return - Available, Damaged or Destroyed.
+        /// condition on return - Available, Damaged or Destroyed. Unlike
+        /// <see cref="BorrowAsync"/>, a return is accepted regardless of which branch
+        /// the item is currently at - that's deliberate, a cross-branch return is
+        /// legitimate and reconciled by a transfer rather than refused here. Records
+        /// <see cref="Loan.ReturnedAtBranchId"/> as the current branch, but leaves
+        /// <see cref="Item.CurrentBranchId"/> untouched.
         /// </summary>
         Task<LoanResult> ReturnAsync(string libraryCode, ItemStatus resultingStatus);
 
@@ -26,9 +37,9 @@ namespace LibrarySystem.Services
         decimal CalculateFine(DateTime dueDate, DateTime returnedDate, ItemStatus resultingStatus);
 
         /// <summary>
-        /// Lists every loan that is still out past its due date, ordered by due date
-        /// (most overdue first), with days overdue and an estimated fine if returned
-        /// today undamaged.
+        /// Lists every loan that is still out past its due date and was borrowed at
+        /// the current branch, ordered by due date (most overdue first), with days
+        /// overdue and an estimated fine if returned today undamaged.
         /// </summary>
         Task<List<OverdueLoanViewModel>> GetOverdueLoansAsync();
 
