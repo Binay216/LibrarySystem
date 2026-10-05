@@ -21,6 +21,11 @@ namespace LibrarySystem.Models
 
         public Borrower? Borrower { get; set; }
 
+        [Required]
+        public int BorrowedAtBranchId { get; set; }
+
+        public Branch? BorrowedAtBranch { get; set; }
+
         [DataType(DataType.Date)]
         public DateTime BorrowedDate { get; set; }
 
@@ -30,6 +35,11 @@ namespace LibrarySystem.Models
         /// <summary>Null while the item is still out; set when it is returned.</summary>
         [DataType(DataType.Date)]
         public DateTime? ReturnedDate { get; set; }
+
+        /// <summary>Null until the item is returned; the branch it was returned to.</summary>
+        public int? ReturnedAtBranchId { get; set; }
+
+        public Branch? ReturnedAtBranch { get; set; }
 
         [Column(TypeName = "decimal(6,2)")]
         public decimal FineAmount { get; set; }

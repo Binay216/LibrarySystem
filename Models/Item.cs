@@ -28,6 +28,18 @@ namespace LibrarySystem.Models
         [Required]
         public ItemStatus Status { get; set; } = ItemStatus.Available;
 
+        /// <summary>The branch this item belongs to by default, independent of where it currently sits.</summary>
+        [Required]
+        public int HomeBranchId { get; set; }
+
+        public Branch? HomeBranch { get; set; }
+
+        /// <summary>The branch this item is physically at right now; changes as transfers complete.</summary>
+        [Required]
+        public int CurrentBranchId { get; set; }
+
+        public Branch? CurrentBranch { get; set; }
+
         public ICollection<Loan> Loans { get; set; } = new List<Loan>();
     }
 }

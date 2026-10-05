@@ -11,7 +11,8 @@ namespace LibrarySystem.Data
         private const string AdminEmail = "admin@library.com";
         private const string AdminPassword = "Admin@123";
 
-        private const string ReceptionEmail = "reception@library.com";
+        /// <summary>Internal so SeedData can look up the seeded reception account's generated Id for Transfer.RequestedByUserId.</summary>
+        internal const string ReceptionEmail = "reception@library.com";
         private const string ReceptionPassword = "Reception@123";
 
         private const string ManagerEmail = "manager@library.com";

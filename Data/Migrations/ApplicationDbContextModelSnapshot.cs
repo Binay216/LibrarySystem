@@ -63,7 +63,51 @@ namespace LibrarySystem.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Borrowers", (string)null);
+                    b.ToTable("Borrowers");
+                });
+
+            modelBuilder.Entity("LibrarySystem.Models.Branch", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("OpeningHours")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("Branches");
                 });
 
             modelBuilder.Entity("LibrarySystem.Models.Item", b =>
@@ -74,10 +118,16 @@ namespace LibrarySystem.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("CurrentBranchId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("HomeBranchId")
+                        .HasColumnType("int");
 
                     b.Property<string>("ItemType")
                         .IsRequired()
@@ -99,10 +149,14 @@ namespace LibrarySystem.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CurrentBranchId");
+
+                    b.HasIndex("HomeBranchId");
+
                     b.HasIndex("LibraryCode")
                         .IsUnique();
 
-                    b.ToTable("Items", (string)null);
+                    b.ToTable("Items");
 
                     b.HasDiscriminator<string>("ItemType").HasValue("Item");
 
@@ -116,6 +170,9 @@ namespace LibrarySystem.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BorrowedAtBranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("BorrowedDate")
                         .HasColumnType("datetime2");
@@ -135,16 +192,70 @@ namespace LibrarySystem.Data.Migrations
                     b.Property<int>("ItemId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("ReturnedAtBranchId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("ReturnedDate")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BorrowedAtBranchId");
+
                     b.HasIndex("BorrowerId");
 
                     b.HasIndex("ItemId");
 
-                    b.ToTable("Loans", (string)null);
+                    b.HasIndex("ReturnedAtBranchId");
+
+                    b.ToTable("Loans");
+                });
+
+            modelBuilder.Entity("LibrarySystem.Models.Transfer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("CompletedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("FromBranchId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ItemId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("RequestedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("RequestedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ToBranchId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FromBranchId");
+
+                    b.HasIndex("ItemId");
+
+                    b.HasIndex("ToBranchId");
+
+                    b.ToTable("Transfers");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -396,8 +507,33 @@ namespace LibrarySystem.Data.Migrations
                     b.HasDiscriminator().HasValue("Toy");
                 });
 
+            modelBuilder.Entity("LibrarySystem.Models.Item", b =>
+                {
+                    b.HasOne("LibrarySystem.Models.Branch", "CurrentBranch")
+                        .WithMany()
+                        .HasForeignKey("CurrentBranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LibrarySystem.Models.Branch", "HomeBranch")
+                        .WithMany()
+                        .HasForeignKey("HomeBranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CurrentBranch");
+
+                    b.Navigation("HomeBranch");
+                });
+
             modelBuilder.Entity("LibrarySystem.Models.Loan", b =>
                 {
+                    b.HasOne("LibrarySystem.Models.Branch", "BorrowedAtBranch")
+                        .WithMany()
+                        .HasForeignKey("BorrowedAtBranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("LibrarySystem.Models.Borrower", "Borrower")
                         .WithMany("Loans")
                         .HasForeignKey("BorrowerId")
@@ -410,9 +546,45 @@ namespace LibrarySystem.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("LibrarySystem.Models.Branch", "ReturnedAtBranch")
+                        .WithMany()
+                        .HasForeignKey("ReturnedAtBranchId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("BorrowedAtBranch");
+
                     b.Navigation("Borrower");
 
                     b.Navigation("Item");
+
+                    b.Navigation("ReturnedAtBranch");
+                });
+
+            modelBuilder.Entity("LibrarySystem.Models.Transfer", b =>
+                {
+                    b.HasOne("LibrarySystem.Models.Branch", "FromBranch")
+                        .WithMany()
+                        .HasForeignKey("FromBranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LibrarySystem.Models.Item", "Item")
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LibrarySystem.Models.Branch", "ToBranch")
+                        .WithMany()
+                        .HasForeignKey("ToBranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("FromBranch");
+
+                    b.Navigation("Item");
+
+                    b.Navigation("ToBranch");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
