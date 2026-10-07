@@ -17,6 +17,8 @@ namespace LibrarySystem.Data
 
         public DbSet<Transfer> Transfers => Set<Transfer>();
 
+        public DbSet<Notification> Notifications => Set<Notification>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -98,6 +100,14 @@ namespace LibrarySystem.Data
                 .HasOne(t => t.ToBranch)
                 .WithMany()
                 .HasForeignKey(t => t.ToBranchId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Restrict, like the Loan FKs above: a borrower with notification
+            // history can't be deleted out from under it.
+            modelBuilder.Entity<Notification>()
+                .HasOne(n => n.Borrower)
+                .WithMany()
+                .HasForeignKey(n => n.BorrowerId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

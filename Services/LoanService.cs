@@ -142,7 +142,7 @@ namespace LibrarySystem.Services
                 ItemName = loan.Item!.Name,
                 LibraryCode = loan.Item.LibraryCode,
                 BorrowerName = $"{loan.Borrower!.FirstName} {loan.Borrower.LastName}",
-                BorrowerPhone = loan.Borrower.Phone,
+                BorrowerPhone = loan.Borrower.Phone ?? string.Empty,
                 BorrowerEmail = loan.Borrower.Email,
                 DueDate = loan.DueDate,
                 DaysOverdue = (today - loan.DueDate).Days,
@@ -166,7 +166,7 @@ namespace LibrarySystem.Services
                 ItemName = loan.Item!.Name,
                 LibraryCode = loan.Item.LibraryCode,
                 BorrowerName = $"{loan.Borrower!.FirstName} {loan.Borrower.LastName}",
-                BorrowerPhone = loan.Borrower.Phone,
+                BorrowerPhone = loan.Borrower.Phone ?? string.Empty,
                 BorrowerEmail = loan.Borrower.Email,
                 ReturnedDate = loan.ReturnedDate,
                 FineAmount = loan.FineAmount

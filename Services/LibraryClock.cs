@@ -14,5 +14,8 @@ namespace LibrarySystem.Services
 
         /// <inheritdoc />
         public DateTime Today => TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _timeZone).Date;
+
+        /// <inheritdoc />
+        public DateTime Now => TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _timeZone);
     }
 }

@@ -20,10 +20,14 @@ namespace LibrarySystem.Models
         [StringLength(256)]
         public string Email { get; set; } = string.Empty;
 
-        [Required]
+        /// <summary>
+        /// Optional - email is the mandatory contact field. Drives notification
+        /// channel selection in NotificationService: SMS if this is set, email
+        /// otherwise.
+        /// </summary>
         [Phone]
         [StringLength(30)]
-        public string Phone { get; set; } = string.Empty;
+        public string? Phone { get; set; }
 
         [Required]
         [StringLength(300)]

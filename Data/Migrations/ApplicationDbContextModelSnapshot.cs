@@ -57,7 +57,6 @@ namespace LibrarySystem.Data.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Phone")
-                        .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
 
@@ -209,6 +208,54 @@ namespace LibrarySystem.Data.Migrations
                     b.HasIndex("ReturnedAtBranchId");
 
                     b.ToTable("Loans");
+                });
+
+            modelBuilder.Entity("LibrarySystem.Models.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("BorrowerId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Channel")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Recipient")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTime?>("SentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BorrowerId");
+
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("LibrarySystem.Models.Transfer", b =>
@@ -558,6 +605,17 @@ namespace LibrarySystem.Data.Migrations
                     b.Navigation("Item");
 
                     b.Navigation("ReturnedAtBranch");
+                });
+
+            modelBuilder.Entity("LibrarySystem.Models.Notification", b =>
+                {
+                    b.HasOne("LibrarySystem.Models.Borrower", "Borrower")
+                        .WithMany()
+                        .HasForeignKey("BorrowerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Borrower");
                 });
 
             modelBuilder.Entity("LibrarySystem.Models.Transfer", b =>

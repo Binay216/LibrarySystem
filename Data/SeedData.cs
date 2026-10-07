@@ -12,7 +12,9 @@ namespace LibrarySystem.Data
     /// overdue/fines/history reports never show up empty or flat. One item's home
     /// and current branch deliberately differ, with a matching open Transfer request
     /// moving it back, and a second, already-completed Transfer gives the status
-    /// filter something to show on both sides. Guarded by an existing-items check,
+    /// filter something to show on both sides. Borrowers deliberately mix having a
+    /// phone number or not, so both notification channels appear in the data.
+    /// Guarded by an existing-items check,
     /// so it only runs once - changing this data requires dropping and re-migrating
     /// the database.
     /// </summary>
@@ -82,13 +84,16 @@ namespace LibrarySystem.Data
             context.Items.AddRange(music);
             context.Items.AddRange(toys);
 
+            // Phone is optional (email is the mandatory contact field) and drives
+            // NotificationService's channel choice - deliberately mixed here so
+            // both the SMS and email notification paths show up in the data.
             var borrowers = new List<Borrower>
             {
                 new() { FirstName = "Alice", LastName = "Johnson", Email = "alice.johnson@example.com", Phone = "555-0101", Address = "12 Maple St, Springfield", MembershipDate = today.AddYears(-2) },
                 new() { FirstName = "Brian", LastName = "Smith", Email = "brian.smith@example.com", Phone = "555-0102", Address = "45 Oak Ave, Springfield", MembershipDate = today.AddYears(-1) },
-                new() { FirstName = "Carla", LastName = "Diaz", Email = "carla.diaz@example.com", Phone = "555-0103", Address = "78 Pine Rd, Springfield", MembershipDate = today.AddMonths(-8) },
+                new() { FirstName = "Carla", LastName = "Diaz", Email = "carla.diaz@example.com", Address = "78 Pine Rd, Springfield", MembershipDate = today.AddMonths(-8) },
                 new() { FirstName = "David", LastName = "Chen", Email = "david.chen@example.com", Phone = "555-0104", Address = "9 Birch Ln, Springfield", MembershipDate = today.AddMonths(-5) },
-                new() { FirstName = "Emma", LastName = "Wilson", Email = "emma.wilson@example.com", Phone = "555-0105", Address = "23 Cedar Ct, Springfield", MembershipDate = today.AddMonths(-3) },
+                new() { FirstName = "Emma", LastName = "Wilson", Email = "emma.wilson@example.com", Address = "23 Cedar Ct, Springfield", MembershipDate = today.AddMonths(-3) },
             };
 
             context.Borrowers.AddRange(borrowers);

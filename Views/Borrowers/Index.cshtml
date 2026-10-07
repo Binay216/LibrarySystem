@@ -35,7 +35,7 @@
                 <tr>
                     <td>@borrower.LastName, @borrower.FirstName</td>
                     <td>@borrower.Email</td>
-                    <td>@borrower.Phone</td>
+                    <td>@(string.IsNullOrWhiteSpace(borrower.Phone) ? "—" : borrower.Phone)</td>
                     <td>@borrower.MembershipDate.ToString("d")</td>
                     <td>
                         @if (borrower.IsActive)

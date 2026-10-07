@@ -12,5 +12,8 @@ namespace LibrarySystem.Services
     public interface ILibraryClock
     {
         DateTime Today { get; }
+
+        /// <summary>The current moment, in the library's own local time - for timestamps that need time-of-day, not just the calendar date (e.g. Notification.CreatedDate/SentDate).</summary>
+        DateTime Now { get; }
     }
 }
