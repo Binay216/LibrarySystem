@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using LibrarySystem.Data;
 using LibrarySystem.Models;
 using LibrarySystem.Models.Enums;
@@ -8,6 +9,8 @@ namespace LibrarySystem.Services
     /// <inheritdoc cref="INotificationService" />
     public class NotificationService(ApplicationDbContext context, ILibraryClock clock, ILogger<NotificationService> logger) : INotificationService
     {
+        private static readonly Regex TokenPlaceholderPattern = new(@"\{([^{}]+)\}", RegexOptions.Compiled);
+
         /// <inheritdoc />
         public async Task<Notification> QueueAsync(int borrowerId, NotificationType type, IReadOnlyDictionary<string, string> tokens)
         {
@@ -25,14 +28,32 @@ namespace LibrarySystem.Services
                 ["BorrowerLastName"] = borrower.LastName
             };
 
+            var subject = Render(template.Subject, allTokens);
+            var body = Render(template.Body, allTokens);
+
+            // Safety net: a template referencing a token the caller didn't supply
+            // (or vice versa) is a template/caller mismatch, not something to fail
+            // on - a slightly broken notification beats a dropped one. Still send
+            // it, but make the mismatch visible rather than shipping it silently.
+            var missingTokens = TokenPlaceholderPattern.Matches(subject + "\n" + body)
+                .Select(m => m.Groups[1].Value)
+                .Distinct()
+                .ToList();
+            if (missingTokens.Count > 0)
+            {
+                logger.LogWarning(
+                    "Notification template for {Type}/{Channel} has unsubstituted token(s) {MissingTokens} - template and caller have gone out of sync.",
+                    type, channel, string.Join(", ", missingTokens));
+            }
+
             var notification = new Notification
             {
                 BorrowerId = borrower.Id,
                 Channel = channel,
                 Type = type,
                 Recipient = recipient,
-                Subject = Render(template.Subject, allTokens),
-                Body = Render(template.Body, allTokens),
+                Subject = subject,
+                Body = body,
                 CreatedDate = clock.Now,
                 Status = NotificationStatus.Queued
             };

@@ -13,7 +13,9 @@ namespace LibrarySystem.Services
         IOptions<FinePolicyOptions> finePolicyOptions,
         ILibraryClock clock,
         ICurrentBranchAccessor currentBranchAccessor,
-        ITransferService transferService) : ILoanService
+        ITransferService transferService,
+        INotificationService notificationService,
+        ILogger<LoanService> logger) : ILoanService
     {
         private readonly FinePolicyOptions _finePolicy = finePolicyOptions.Value;
 
@@ -57,6 +59,14 @@ namespace LibrarySystem.Services
             context.Loans.Add(loan);
             await context.SaveChangesAsync();
 
+            await TryQueueNotificationAsync(borrower.Id, NotificationType.Borrowed, new Dictionary<string, string>
+            {
+                ["ItemName"] = item.Name,
+                ["LibraryCode"] = item.LibraryCode,
+                ["DueDate"] = loan.DueDate.ToString("d"),
+                ["BranchName"] = currentBranch.Name
+            });
+
             return LoanResult.Success(loan, $"'{item.Name}' borrowed by {borrower.FirstName} {borrower.LastName}. Due back {loan.DueDate:d}.");
         }
 
@@ -98,6 +108,30 @@ namespace LibrarySystem.Services
             if (currentBranch.Id != item.HomeBranchId)
             {
                 await transferService.RaiseTransferAsync(item.Id, item.HomeBranchId, "Returning to home branch", actingUserId);
+            }
+
+            if (loan.FineAmount > 0)
+            {
+                var reasons = new List<string>();
+                if (today > loan.DueDate)
+                {
+                    reasons.Add("late");
+                }
+                if (resultingStatus == ItemStatus.Damaged)
+                {
+                    reasons.Add("damaged");
+                }
+                if (resultingStatus == ItemStatus.Destroyed)
+                {
+                    reasons.Add("destroyed");
+                }
+
+                await TryQueueNotificationAsync(loan.BorrowerId, NotificationType.FineAccrued, new Dictionary<string, string>
+                {
+                    ["ItemName"] = item.Name,
+                    ["FineAmount"] = loan.FineAmount.ToString("C"),
+                    ["Reason"] = string.Join(", ", reasons)
+                });
             }
 
             var message = loan.FineAmount > 0
@@ -220,6 +254,24 @@ namespace LibrarySystem.Services
                 FineAmount = loan.FineAmount,
                 FinePaid = loan.FinePaid
             }).ToList();
+        }
+
+        /// <summary>
+        /// Queues a notification without letting it affect the caller: borrowing or
+        /// returning an item must succeed regardless of whether notifying the
+        /// borrower does. Any exception - a missing template case, a DB hiccup,
+        /// anything - is logged and swallowed here rather than bubbling up.
+        /// </summary>
+        private async Task TryQueueNotificationAsync(int borrowerId, NotificationType type, Dictionary<string, string> tokens)
+        {
+            try
+            {
+                await notificationService.QueueAsync(borrowerId, type, tokens);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to queue a {Type} notification for borrower {BorrowerId}.", type, borrowerId);
+            }
         }
     }
 }

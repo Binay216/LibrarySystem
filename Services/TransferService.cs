@@ -114,6 +114,14 @@ namespace LibrarySystem.Services
 
             await context.SaveChangesAsync();
 
+            // Deliberately not queuing a TransferArrived notification here. A
+            // Transfer has no borrower on it at all - it's two branches moving an
+            // item, not a per-borrower flow. RequestedByUserId is the staff member
+            // who raised it (an AspNetUsers account), not a Borrower, so there's no
+            // honest way to fill Notification.BorrowerId yet. TransferArrived will
+            // have a real target once a reservation feature exists linking a
+            // borrower to a specific item-at-a-branch request - completing the
+            // matching transfer would then notify that reservation's borrower.
             return TransferResult.Success(transfer, $"'{transfer.Item.Name}' transfer completed - now at {transfer.ToBranch!.Name}.");
         }
 

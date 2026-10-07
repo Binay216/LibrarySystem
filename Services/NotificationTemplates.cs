@@ -20,10 +20,10 @@ namespace LibrarySystem.Services
         {
             (NotificationType.Borrowed, NotificationChannel.Email) => new(
                 "You've borrowed '{ItemName}'",
-                "Hi {BorrowerFirstName},\n\nYou've borrowed '{ItemName}' ({LibraryCode}). It's due back on {DueDate}.\n\nThanks for visiting us."),
+                "Hi {BorrowerFirstName},\n\nYou've borrowed '{ItemName}' ({LibraryCode}) from {BranchName}. It's due back on {DueDate}.\n\nThanks for visiting us."),
             (NotificationType.Borrowed, NotificationChannel.Sms) => new(
                 string.Empty,
-                "You borrowed '{ItemName}', due {DueDate}."),
+                "You borrowed '{ItemName}' from {BranchName}, due {DueDate}."),
 
             (NotificationType.DueSoon, NotificationChannel.Email) => new(
                 "Your loan is due soon",
@@ -41,10 +41,10 @@ namespace LibrarySystem.Services
 
             (NotificationType.FineAccrued, NotificationChannel.Email) => new(
                 "A fine has been added to your account",
-                "Hi {BorrowerFirstName},\n\nA fine of {FineAmount} has been added to your account for '{ItemName}' ({LibraryCode}).\n\nThanks."),
+                "Hi {BorrowerFirstName},\n\nA fine of {FineAmount} has been added to your account for '{ItemName}' ({Reason}).\n\nThanks."),
             (NotificationType.FineAccrued, NotificationChannel.Sms) => new(
                 string.Empty,
-                "Fine of {FineAmount} added for '{ItemName}'."),
+                "Fine of {FineAmount} added for '{ItemName}' ({Reason})."),
 
             (NotificationType.ReservationReady, NotificationChannel.Email) => new(
                 "Your reservation is ready for pickup",
