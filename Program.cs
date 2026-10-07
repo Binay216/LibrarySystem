@@ -27,6 +27,7 @@ builder.Services.AddScoped<ICurrentBranchAccessor, CurrentBranchAccessor>();
 builder.Services.AddScoped<ITransferService, TransferService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<INotificationSweepService, NotificationSweepService>();
+builder.Services.AddScoped<IReservationService, ReservationService>();
 
 var app = builder.Build();
 

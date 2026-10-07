@@ -19,6 +19,8 @@ namespace LibrarySystem.Data
 
         public DbSet<Notification> Notifications => Set<Notification>();
 
+        public DbSet<Reservation> Reservations => Set<Reservation>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -114,6 +116,21 @@ namespace LibrarySystem.Data
                 .HasOne(n => n.Loan)
                 .WithMany()
                 .HasForeignKey(n => n.LoanId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Restrict on both: a reservation is a record of queue history same as
+            // a Loan, so neither the item nor the borrower it references can be
+            // deleted out from under it.
+            modelBuilder.Entity<Reservation>()
+                .HasOne(r => r.Item)
+                .WithMany()
+                .HasForeignKey(r => r.ItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Reservation>()
+                .HasOne(r => r.Borrower)
+                .WithMany()
+                .HasForeignKey(r => r.BorrowerId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

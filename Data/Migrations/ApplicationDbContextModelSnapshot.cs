@@ -263,6 +263,47 @@ namespace LibrarySystem.Data.Migrations
                     b.ToTable("Notifications");
                 });
 
+            modelBuilder.Entity("LibrarySystem.Models.Reservation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BorrowerId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ExpiryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ItemId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("NotifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("PlacedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("QueuePosition")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ReadyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BorrowerId");
+
+                    b.HasIndex("ItemId");
+
+                    b.ToTable("Reservations");
+                });
+
             modelBuilder.Entity("LibrarySystem.Models.Transfer", b =>
                 {
                     b.Property<int>("Id")
@@ -628,6 +669,25 @@ namespace LibrarySystem.Data.Migrations
                     b.Navigation("Borrower");
 
                     b.Navigation("Loan");
+                });
+
+            modelBuilder.Entity("LibrarySystem.Models.Reservation", b =>
+                {
+                    b.HasOne("LibrarySystem.Models.Borrower", "Borrower")
+                        .WithMany()
+                        .HasForeignKey("BorrowerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LibrarySystem.Models.Item", "Item")
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Borrower");
+
+                    b.Navigation("Item");
                 });
 
             modelBuilder.Entity("LibrarySystem.Models.Transfer", b =>
