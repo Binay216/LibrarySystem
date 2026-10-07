@@ -1,0 +1,37 @@
+@model Notification
+@{
+    ViewData["Title"] = "Notification Details";
+}
+
+<h1>Notification Details</h1>
+
+<dl class="row">
+    <dt class="col-sm-2">Date</dt>
+    <dd class="col-sm-10">@Model.CreatedDate.ToString("g")</dd>
+
+    <dt class="col-sm-2">Borrower</dt>
+    <dd class="col-sm-10">@Model.Borrower?.FirstName @Model.Borrower?.LastName</dd>
+
+    <dt class="col-sm-2">Channel</dt>
+    <dd class="col-sm-10">@Model.Channel</dd>
+
+    <dt class="col-sm-2">Type</dt>
+    <dd class="col-sm-10"><partial name="_NotificationTypeBadge" model="@Model.Type" /></dd>
+
+    <dt class="col-sm-2">Recipient</dt>
+    <dd class="col-sm-10">@Model.Recipient</dd>
+
+    <dt class="col-sm-2">Status</dt>
+    <dd class="col-sm-10"><partial name="_NotificationStatusBadge" model="@Model.Status" /></dd>
+
+    <dt class="col-sm-2">Sent</dt>
+    <dd class="col-sm-10">@(Model.SentDate?.ToString("g") ?? "-")</dd>
+
+    <dt class="col-sm-2">Subject</dt>
+    <dd class="col-sm-10">@(string.IsNullOrEmpty(Model.Subject) ? "-" : Model.Subject)</dd>
+
+    <dt class="col-sm-2">Body</dt>
+    <dd class="col-sm-10" style="white-space: pre-wrap;">@Model.Body</dd>
+</dl>
+
+<a asp-action="Index" class="btn btn-secondary">Back to List</a>

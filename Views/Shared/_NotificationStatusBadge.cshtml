@@ -1,0 +1,11 @@
+@model NotificationStatus
+@{
+    var badgeClass = Model switch
+    {
+        NotificationStatus.Queued => "text-bg-warning",
+        NotificationStatus.Sent => "text-bg-success",
+        NotificationStatus.Failed => "text-bg-danger",
+        _ => "text-bg-secondary"
+    };
+}
+<span class="badge @badgeClass">@Model</span>

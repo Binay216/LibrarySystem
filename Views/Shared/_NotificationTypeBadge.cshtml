@@ -1,0 +1,14 @@
+@model NotificationType
+@{
+    var badgeClass = Model switch
+    {
+        NotificationType.Borrowed => "text-bg-primary",
+        NotificationType.DueSoon => "text-bg-warning",
+        NotificationType.Overdue => "text-bg-danger",
+        NotificationType.FineAccrued => "text-bg-dark",
+        NotificationType.ReservationReady => "text-bg-info",
+        NotificationType.TransferArrived => "text-bg-secondary",
+        _ => "text-bg-secondary"
+    };
+}
+<span class="badge @badgeClass">@Model</span>

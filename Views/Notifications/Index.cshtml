@@ -1,0 +1,130 @@
+@model NotificationListViewModel
+@{
+    ViewData["Title"] = "Notifications";
+}
+
+<h1>Notifications</h1>
+<p class="text-muted">Every notification sent to a borrower - a read-only record, newest first.</p>
+
+<form asp-action="Index" method="get" class="row g-2 mb-4">
+    <div class="col-6 col-md-2">
+        <label asp-for="ChannelFilter" class="form-label visually-hidden"></label>
+        <select asp-for="ChannelFilter" asp-items="Html.GetEnumSelectList<NotificationChannel>()" class="form-select">
+            <option value="">All Channels</option>
+        </select>
+    </div>
+    <div class="col-6 col-md-2">
+        <label asp-for="TypeFilter" class="form-label visually-hidden"></label>
+        <select asp-for="TypeFilter" asp-items="Html.GetEnumSelectList<NotificationType>()" class="form-select">
+            <option value="">All Types</option>
+        </select>
+    </div>
+    <div class="col-6 col-md-2">
+        <label asp-for="StatusFilter" class="form-label visually-hidden"></label>
+        <select asp-for="StatusFilter" asp-items="Html.GetEnumSelectList<NotificationStatus>()" class="form-select">
+            <option value="">All Statuses</option>
+        </select>
+    </div>
+    <div class="col-6 col-md-2">
+        <label for="fromDate" class="form-label visually-hidden">From</label>
+        @* Plain input, not asp-for: asp-for on a DateTime "date" input adds a
+           companion "__Invariant" hidden field (how model binding knows to parse
+           the value as culture-invariant ISO-8601 rather than the current
+           culture). Harmless on a POST form, but this is a GET filter form, so
+           that hidden field would show up as a stray query parameter. yyyy-MM-dd
+           round-trips fine without it. *@
+        <input type="date" id="fromDate" name="fromDate" class="form-control" placeholder="From" value="@Model.FromDate?.ToString("yyyy-MM-dd")" />
+    </div>
+    <div class="col-6 col-md-2">
+        <label for="toDate" class="form-label visually-hidden">To</label>
+        <input type="date" id="toDate" name="toDate" class="form-control" placeholder="To" value="@Model.ToDate?.ToString("yyyy-MM-dd")" />
+    </div>
+    <div class="col-6 col-md-2">
+        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel me-1" aria-hidden="true"></i>Filter</button>
+    </div>
+</form>
+
+<p class="text-muted">@Model.TotalCount notification(s) found.</p>
+
+@if (Model.Items.Count == 0)
+{
+    <div class="empty-state">
+        <i class="bi bi-bell-slash" aria-hidden="true"></i>
+        <p class="mb-0">No notifications match your filters.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Borrower</th>
+                    <th>Channel</th>
+                    <th>Type</th>
+                    <th>Recipient</th>
+                    <th>Subject</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var notification in Model.Items)
+                {
+                    <tr>
+                        <td>@notification.CreatedDate.ToString("g")</td>
+                        <td>@notification.BorrowerName</td>
+                        <td>
+                            @if (notification.Channel == NotificationChannel.Email)
+                            {
+                                <i class="bi bi-envelope me-1" aria-hidden="true"></i>
+                            }
+                            else
+                            {
+                                <i class="bi bi-phone me-1" aria-hidden="true"></i>
+                            }
+                            @notification.Channel
+                        </td>
+                        <td><partial name="_NotificationTypeBadge" model="@notification.Type" /></td>
+                        <td>@notification.Recipient</td>
+                        <td>@notification.Subject</td>
+                        <td><partial name="_NotificationStatusBadge" model="@notification.Status" /></td>
+                        <td class="text-end">
+                            <a asp-action="Details" asp-route-id="@notification.Id" class="btn btn-sm btn-outline-secondary">Details</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Model.TotalPages > 1)
+    {
+        <nav aria-label="Notification pages">
+            <ul class="pagination">
+                <li class="page-item @(Model.Page <= 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-all-route-data="@RouteValuesFor(Model.Page - 1)">Previous</a>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">Page @Model.Page of @Model.TotalPages</span>
+                </li>
+                <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-all-route-data="@RouteValuesFor(Model.Page + 1)">Next</a>
+                </li>
+            </ul>
+        </nav>
+    }
+}
+
+@functions {
+    private Dictionary<string, string> RouteValuesFor(int page) => new()
+    {
+        ["channelFilter"] = Model.ChannelFilter?.ToString() ?? "",
+        ["typeFilter"] = Model.TypeFilter?.ToString() ?? "",
+        ["statusFilter"] = Model.StatusFilter?.ToString() ?? "",
+        ["fromDate"] = Model.FromDate?.ToString("yyyy-MM-dd") ?? "",
+        ["toDate"] = Model.ToDate?.ToString("yyyy-MM-dd") ?? "",
+        ["page"] = page.ToString()
+    };
+}
