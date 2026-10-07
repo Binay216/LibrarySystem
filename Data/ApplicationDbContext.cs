@@ -109,6 +109,12 @@ namespace LibrarySystem.Data
                 .WithMany()
                 .HasForeignKey(n => n.BorrowerId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Notification>()
+                .HasOne(n => n.Loan)
+                .WithMany()
+                .HasForeignKey(n => n.LoanId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

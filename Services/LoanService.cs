@@ -65,7 +65,7 @@ namespace LibrarySystem.Services
                 ["LibraryCode"] = item.LibraryCode,
                 ["DueDate"] = loan.DueDate.ToString("d"),
                 ["BranchName"] = currentBranch.Name
-            });
+            }, loan.Id);
 
             return LoanResult.Success(loan, $"'{item.Name}' borrowed by {borrower.FirstName} {borrower.LastName}. Due back {loan.DueDate:d}.");
         }
@@ -131,7 +131,7 @@ namespace LibrarySystem.Services
                     ["ItemName"] = item.Name,
                     ["FineAmount"] = loan.FineAmount.ToString("C"),
                     ["Reason"] = string.Join(", ", reasons)
-                });
+                }, loan.Id);
             }
 
             var message = loan.FineAmount > 0
@@ -262,11 +262,11 @@ namespace LibrarySystem.Services
         /// borrower does. Any exception - a missing template case, a DB hiccup,
         /// anything - is logged and swallowed here rather than bubbling up.
         /// </summary>
-        private async Task TryQueueNotificationAsync(int borrowerId, NotificationType type, Dictionary<string, string> tokens)
+        private async Task TryQueueNotificationAsync(int borrowerId, NotificationType type, Dictionary<string, string> tokens, int? loanId = null)
         {
             try
             {
-                await notificationService.QueueAsync(borrowerId, type, tokens);
+                await notificationService.QueueAsync(borrowerId, type, tokens, loanId);
             }
             catch (Exception ex)
             {

@@ -232,6 +232,9 @@ namespace LibrarySystem.Data.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("LoanId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Recipient")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -254,6 +257,8 @@ namespace LibrarySystem.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BorrowerId");
+
+                    b.HasIndex("LoanId");
 
                     b.ToTable("Notifications");
                 });
@@ -615,7 +620,14 @@ namespace LibrarySystem.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("LibrarySystem.Models.Loan", "Loan")
+                        .WithMany()
+                        .HasForeignKey("LoanId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Borrower");
+
+                    b.Navigation("Loan");
                 });
 
             modelBuilder.Entity("LibrarySystem.Models.Transfer", b =>

@@ -12,7 +12,7 @@ namespace LibrarySystem.Services
         private static readonly Regex TokenPlaceholderPattern = new(@"\{([^{}]+)\}", RegexOptions.Compiled);
 
         /// <inheritdoc />
-        public async Task<Notification> QueueAsync(int borrowerId, NotificationType type, IReadOnlyDictionary<string, string> tokens)
+        public async Task<Notification> QueueAsync(int borrowerId, NotificationType type, IReadOnlyDictionary<string, string> tokens, int? loanId = null)
         {
             var borrower = await context.Borrowers.FindAsync(borrowerId)
                 ?? throw new InvalidOperationException($"Borrower {borrowerId} not found.");
@@ -49,6 +49,7 @@ namespace LibrarySystem.Services
             var notification = new Notification
             {
                 BorrowerId = borrower.Id,
+                LoanId = loanId,
                 Channel = channel,
                 Type = type,
                 Recipient = recipient,

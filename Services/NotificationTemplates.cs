@@ -34,10 +34,10 @@ namespace LibrarySystem.Services
 
             (NotificationType.Overdue, NotificationChannel.Email) => new(
                 "Your loan is overdue",
-                "Hi {BorrowerFirstName},\n\n'{ItemName}' ({LibraryCode}) was due on {DueDate} and is now overdue. Please return it as soon as possible to avoid further fines.\n\nThanks."),
+                "Hi {BorrowerFirstName},\n\n'{ItemName}' ({LibraryCode}) was due on {DueDate} and is now {DaysOverdue} day(s) overdue, with a fine of {FineAmount} accruing so far. Please return it as soon as possible to avoid further fines.\n\nThanks."),
             (NotificationType.Overdue, NotificationChannel.Sms) => new(
                 string.Empty,
-                "'{ItemName}' is overdue (was due {DueDate})."),
+                "'{ItemName}' is {DaysOverdue}d overdue (due {DueDate}), fine so far {FineAmount}."),
 
             (NotificationType.FineAccrued, NotificationChannel.Email) => new(
                 "A fine has been added to your account",

@@ -10,7 +10,7 @@ namespace LibrarySystem.Controllers
 {
     /// <summary>Read-only statistics dashboards for the Manager role.</summary>
     [Authorize(Roles = "Manager")]
-    public class ManagerController(IStatisticsService statisticsService, ApplicationDbContext context) : Controller
+    public class ManagerController(IStatisticsService statisticsService, ApplicationDbContext context, INotificationSweepService notificationSweepService) : Controller
     {
         /// <summary>
         /// Shows borrowing, item status and fine statistics on one dashboard,
@@ -29,6 +29,18 @@ namespace LibrarySystem.Controllers
             };
 
             return View(model);
+        }
+
+        /// <summary>Runs the due-soon/overdue notification sweep on demand and reports what it did.</summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SweepNotifications(int? branchId)
+        {
+            var result = await notificationSweepService.RunAsync();
+            TempData["StatusMessage"] =
+                $"Notification sweep complete: {result.DueSoonQueued} due-soon and {result.OverdueQueued} overdue notification(s) queued, " +
+                $"{result.SkippedAlreadyNotified} already notified today, {result.Failed} failed.";
+            return RedirectToAction(nameof(Index), new { branchId });
         }
 
         private async Task<List<SelectListItem>> GetBranchOptionsAsync()

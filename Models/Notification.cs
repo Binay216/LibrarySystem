@@ -19,6 +19,17 @@ namespace LibrarySystem.Models
 
         public Borrower? Borrower { get; set; }
 
+        /// <summary>
+        /// The loan this notification is about, when it's about one - Borrowed,
+        /// DueSoon, Overdue and FineAccrued all set this; ReservationReady and
+        /// TransferArrived aren't loan-driven, so it's null for those. Doubles as
+        /// the idempotency key for NotificationSweepService: (LoanId, Type, day)
+        /// identifies "have we already sent this reminder today".
+        /// </summary>
+        public int? LoanId { get; set; }
+
+        public Loan? Loan { get; set; }
+
         [Required]
         public NotificationChannel Channel { get; set; }
 
