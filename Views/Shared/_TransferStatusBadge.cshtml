@@ -1,0 +1,12 @@
+@model TransferStatus
+@{
+    var badgeClass = Model switch
+    {
+        TransferStatus.Requested => "text-bg-warning",
+        TransferStatus.InTransit => "text-bg-primary",
+        TransferStatus.Completed => "text-bg-success",
+        TransferStatus.Cancelled => "text-bg-secondary",
+        _ => "text-bg-secondary"
+    };
+}
+<span class="badge @badgeClass">@Model</span>

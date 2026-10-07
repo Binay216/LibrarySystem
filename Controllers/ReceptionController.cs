@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using LibrarySystem.Data;
 using LibrarySystem.Models.ViewModels;
 using LibrarySystem.Services;
@@ -74,7 +75,8 @@ namespace LibrarySystem.Controllers
                 return View(model);
             }
 
-            var result = await loanService.ReturnAsync(model.LibraryCode, model.Condition);
+            var actingUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+            var result = await loanService.ReturnAsync(model.LibraryCode, model.Condition, actingUserId);
             if (!result.Succeeded)
             {
                 ModelState.AddModelError(string.Empty, result.Message);

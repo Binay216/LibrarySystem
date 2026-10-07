@@ -24,6 +24,7 @@ builder.Services.AddSingleton<ILibraryClock, LibraryClock>();
 builder.Services.AddScoped<ILoanService, LoanService>();
 builder.Services.AddScoped<IStatisticsService, StatisticsService>();
 builder.Services.AddScoped<ICurrentBranchAccessor, CurrentBranchAccessor>();
+builder.Services.AddScoped<ITransferService, TransferService>();
 
 var app = builder.Build();
 

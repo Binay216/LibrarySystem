@@ -1,0 +1,140 @@
+@model TransferQueueViewModel
+@{
+    ViewData["Title"] = "Transfers";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Transfers</h1>
+    <a asp-action="Raise" class="btn btn-primary"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Raise Transfer</a>
+</div>
+
+@if (TempData["StatusMessage"] is string statusMessage)
+{
+    var succeeded = TempData["StatusSucceeded"] is bool s && s;
+    <div class="alert @(succeeded ? "alert-success" : "alert-danger")">@statusMessage</div>
+}
+
+<form asp-action="Index" method="get" class="row g-2 mb-4">
+    <div class="col-auto">
+        <label for="status" class="form-label mb-0">Status</label>
+        <select name="status" id="status" class="form-select" onchange="this.form.submit()">
+            <option value="">Active (Requested / In Transit)</option>
+            @foreach (var status in Enum.GetValues<TransferStatus>())
+            {
+                <option value="@status" selected="@(Model.StatusFilter == status)">@status</option>
+            }
+        </select>
+    </div>
+</form>
+
+<h2 class="h4">Incoming</h2>
+@if (Model.Incoming.Count == 0)
+{
+    <div class="empty-state">
+        <i class="bi bi-inbox" aria-hidden="true"></i>
+        <p class="mb-0">No incoming transfers.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive mb-4">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Library Code</th>
+                    <th>From</th>
+                    <th>Status</th>
+                    <th>Requested</th>
+                    <th>Reason</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var transfer in Model.Incoming)
+                {
+                    <tr>
+                        <td>@transfer.ItemName</td>
+                        <td>@transfer.LibraryCode</td>
+                        <td>@transfer.FromBranchName</td>
+                        <td><partial name="_TransferStatusBadge" model="@transfer.Status" /></td>
+                        <td>@transfer.RequestedDate.ToString("d")</td>
+                        <td class="small">@transfer.Reason</td>
+                        <td class="text-end">
+                            @if (transfer.Status == TransferStatus.InTransit)
+                            {
+                                <form asp-action="Complete" method="post" class="d-inline">
+                                    <input type="hidden" name="id" value="@transfer.Id" />
+                                    <button type="submit" class="btn btn-sm btn-success">Complete</button>
+                                </form>
+                            }
+                            @if (transfer.Status is TransferStatus.Requested or TransferStatus.InTransit)
+                            {
+                                <form asp-action="Cancel" method="post" class="d-inline">
+                                    <input type="hidden" name="id" value="@transfer.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<h2 class="h4 mt-4">Outgoing</h2>
+@if (Model.Outgoing.Count == 0)
+{
+    <div class="empty-state">
+        <i class="bi bi-inbox" aria-hidden="true"></i>
+        <p class="mb-0">No outgoing transfers.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Library Code</th>
+                    <th>To</th>
+                    <th>Status</th>
+                    <th>Requested</th>
+                    <th>Reason</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var transfer in Model.Outgoing)
+                {
+                    <tr>
+                        <td>@transfer.ItemName</td>
+                        <td>@transfer.LibraryCode</td>
+                        <td>@transfer.ToBranchName</td>
+                        <td><partial name="_TransferStatusBadge" model="@transfer.Status" /></td>
+                        <td>@transfer.RequestedDate.ToString("d")</td>
+                        <td class="small">@transfer.Reason</td>
+                        <td class="text-end">
+                            @if (transfer.Status == TransferStatus.Requested)
+                            {
+                                <form asp-action="MarkInTransit" method="post" class="d-inline">
+                                    <input type="hidden" name="id" value="@transfer.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-primary">Mark In Transit</button>
+                                </form>
+                            }
+                            @if (transfer.Status is TransferStatus.Requested or TransferStatus.InTransit)
+                            {
+                                <form asp-action="Cancel" method="post" class="d-inline">
+                                    <input type="hidden" name="id" value="@transfer.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

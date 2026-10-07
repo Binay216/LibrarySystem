@@ -8,7 +8,12 @@ using Microsoft.Extensions.Options;
 namespace LibrarySystem.Services
 {
     /// <inheritdoc cref="ILoanService" />
-    public class LoanService(ApplicationDbContext context, IOptions<FinePolicyOptions> finePolicyOptions, ILibraryClock clock, ICurrentBranchAccessor currentBranchAccessor) : ILoanService
+    public class LoanService(
+        ApplicationDbContext context,
+        IOptions<FinePolicyOptions> finePolicyOptions,
+        ILibraryClock clock,
+        ICurrentBranchAccessor currentBranchAccessor,
+        ITransferService transferService) : ILoanService
     {
         private readonly FinePolicyOptions _finePolicy = finePolicyOptions.Value;
 
@@ -56,7 +61,7 @@ namespace LibrarySystem.Services
         }
 
         /// <inheritdoc />
-        public async Task<LoanResult> ReturnAsync(string libraryCode, ItemStatus resultingStatus)
+        public async Task<LoanResult> ReturnAsync(string libraryCode, ItemStatus resultingStatus, string actingUserId)
         {
             var item = await context.Items.FirstOrDefaultAsync(i => i.LibraryCode == libraryCode.Trim());
             if (item is null)
@@ -85,6 +90,15 @@ namespace LibrarySystem.Services
             item.Status = resultingStatus;
 
             await context.SaveChangesAsync();
+
+            // Best-effort: if this wasn't returned at the item's home branch, queue
+            // it to go back. RaiseTransferAsync refuses on its own (e.g. an already
+            // active transfer, or the item not being Available) - either way, the
+            // return above has already succeeded and isn't affected.
+            if (currentBranch.Id != item.HomeBranchId)
+            {
+                await transferService.RaiseTransferAsync(item.Id, item.HomeBranchId, "Returning to home branch", actingUserId);
+            }
 
             var message = loan.FineAmount > 0
                 ? $"'{item.Name}' returned. Fine due: {loan.FineAmount:C}."

@@ -24,6 +24,12 @@ namespace LibrarySystem.Models.ViewModels
         /// <summary>Type-specific summary, e.g. "J.R.R. Tolkien - Fantasy" for a book.</summary>
         public string Summary { get; set; } = string.Empty;
 
+        /// <summary>The branch the item is physically at right now. Requires the caller to have included Item.CurrentBranch.</summary>
+        public string CurrentBranchName { get; set; } = string.Empty;
+
+        /// <summary>True when the item isn't currently at its home branch - e.g. mid-transfer.</summary>
+        public bool IsAwayFromHome { get; set; }
+
         public static ItemListItemViewModel FromItem(Item item)
         {
             var (typeLabel, summary) = item switch
@@ -42,7 +48,9 @@ namespace LibrarySystem.Models.ViewModels
                 LibraryCode = item.LibraryCode,
                 Status = item.Status,
                 TypeLabel = typeLabel,
-                Summary = summary
+                Summary = summary,
+                CurrentBranchName = item.CurrentBranch!.Name,
+                IsAwayFromHome = item.CurrentBranchId != item.HomeBranchId
             };
         }
     }

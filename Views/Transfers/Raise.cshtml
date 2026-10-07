@@ -1,0 +1,39 @@
+@model RaiseTransferViewModel
+@{
+    ViewData["Title"] = "Raise Transfer";
+}
+
+<h1>Raise Transfer</h1>
+
+<form asp-action="Raise" method="post" class="col-md-6">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="mb-3">
+        <label asp-for="ItemId" class="form-label"></label>
+        <select asp-for="ItemId" asp-items="Model.Items" class="form-select">
+            <option value="">-- Select an item --</option>
+        </select>
+        <span asp-validation-for="ItemId" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="ToBranchId" class="form-label"></label>
+        <select asp-for="ToBranchId" asp-items="Model.Branches" class="form-select">
+            <option value="">-- Select a destination --</option>
+        </select>
+        <span asp-validation-for="ToBranchId" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Reason" class="form-label"></label>
+        <textarea asp-for="Reason" class="form-control" rows="2"></textarea>
+        <span asp-validation-for="Reason" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary"><i class="bi bi-send me-1" aria-hidden="true"></i>Raise Transfer</button>
+    <a asp-action="Index" class="btn btn-secondary">Back</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

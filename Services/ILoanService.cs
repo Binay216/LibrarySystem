@@ -23,9 +23,14 @@ namespace LibrarySystem.Services
         /// the item is currently at - that's deliberate, a cross-branch return is
         /// legitimate and reconciled by a transfer rather than refused here. Records
         /// <see cref="Loan.ReturnedAtBranchId"/> as the current branch, but leaves
-        /// <see cref="Item.CurrentBranchId"/> untouched.
+        /// <see cref="Item.CurrentBranchId"/> untouched. If the return happens away
+        /// from the item's home branch, a Requested transfer back home is raised
+        /// automatically (best-effort - see <see cref="ITransferService.RaiseTransferAsync"/>;
+        /// if one is already active for this item, or the item wasn't returned
+        /// Available, no transfer is queued, but the return itself still succeeds).
+        /// <paramref name="actingUserId"/> is attributed as that transfer's requester.
         /// </summary>
-        Task<LoanResult> ReturnAsync(string libraryCode, ItemStatus resultingStatus);
+        Task<LoanResult> ReturnAsync(string libraryCode, ItemStatus resultingStatus, string actingUserId);
 
         /// <summary>
         /// Calculates a loan's fine from the fine policy in configuration: a late fee

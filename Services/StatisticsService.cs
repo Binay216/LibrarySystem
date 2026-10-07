@@ -109,9 +109,9 @@ namespace LibrarySystem.Services
         /// <inheritdoc />
         public async Task<List<ItemListItemViewModel>> GetFeaturedItemsAsync()
         {
-            var featuredBook = await context.Items.OfType<Book>().AsNoTracking().Where(i => i.Status == ItemStatus.Available).OrderBy(i => i.Name).FirstOrDefaultAsync();
-            var featuredMusic = await context.Items.OfType<Music>().AsNoTracking().Where(i => i.Status == ItemStatus.Available).OrderBy(i => i.Name).FirstOrDefaultAsync();
-            var featuredToy = await context.Items.OfType<Toy>().AsNoTracking().Where(i => i.Status == ItemStatus.Available).OrderBy(i => i.Name).FirstOrDefaultAsync();
+            var featuredBook = await context.Items.OfType<Book>().AsNoTracking().Include(i => i.CurrentBranch).Where(i => i.Status == ItemStatus.Available).OrderBy(i => i.Name).FirstOrDefaultAsync();
+            var featuredMusic = await context.Items.OfType<Music>().AsNoTracking().Include(i => i.CurrentBranch).Where(i => i.Status == ItemStatus.Available).OrderBy(i => i.Name).FirstOrDefaultAsync();
+            var featuredToy = await context.Items.OfType<Toy>().AsNoTracking().Include(i => i.CurrentBranch).Where(i => i.Status == ItemStatus.Available).OrderBy(i => i.Name).FirstOrDefaultAsync();
 
             return new Item?[] { featuredBook, featuredMusic, featuredToy }
                 .Where(i => i is not null)

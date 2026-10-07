@@ -15,7 +15,7 @@ namespace LibrarySystem.Controllers
         /// <summary>Searches items by name/description, optionally filtered by type and availability.</summary>
         public async Task<IActionResult> Index(CatalogSearchViewModel model)
         {
-            var query = context.Items.AsNoTracking().AsQueryable();
+            var query = context.Items.AsNoTracking().Include(i => i.CurrentBranch).AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(model.SearchTerm))
             {

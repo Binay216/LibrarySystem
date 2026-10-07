@@ -44,6 +44,31 @@
     <span asp-validation-for="Status" class="text-danger"></span>
 </div>
 
+<div class="mb-3">
+    <label asp-for="HomeBranchId" class="form-label"></label>
+    <select asp-for="HomeBranchId" asp-items="Model.Branches" class="form-select" id="HomeBranchId">
+        <option value="">-- Select a branch --</option>
+    </select>
+    <span asp-validation-for="HomeBranchId" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="CurrentBranchId" class="form-label"></label>
+    @if (Model.Id == 0)
+    {
+        <select asp-for="CurrentBranchId" asp-items="Model.Branches" class="form-select" id="CurrentBranchId">
+            <option value="">-- Select a branch --</option>
+        </select>
+        <span asp-validation-for="CurrentBranchId" class="text-danger"></span>
+    }
+    else
+    {
+        <input value="@Model.CurrentBranchName" class="form-control" disabled />
+        <input type="hidden" asp-for="CurrentBranchId" />
+        <div class="form-text">Item location changes go through Transfers, not this form.</div>
+    }
+</div>
+
 <fieldset class="item-type-fields" data-item-type="Book">
     <legend class="h6">Book details</legend>
     <div class="mb-3">
@@ -107,3 +132,20 @@
         }
     })();
 </script>
+
+@if (Model.Id == 0)
+{
+    <script>
+        // New items start at their home branch - only on Create, since Edit no
+        // longer has a Current Branch select to sync (it's read-only there).
+        (function () {
+            var homeBranchSelect = document.getElementById('HomeBranchId');
+            var currentBranchSelect = document.getElementById('CurrentBranchId');
+            if (homeBranchSelect && currentBranchSelect) {
+                homeBranchSelect.addEventListener('change', function () {
+                    currentBranchSelect.value = homeBranchSelect.value;
+                });
+            }
+        })();
+    </script>
+}

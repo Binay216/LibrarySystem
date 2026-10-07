@@ -28,6 +28,18 @@
     <dt class="col-sm-2">Status</dt>
     <dd class="col-sm-10"><partial name="_StatusBadge" model="@Model.Status" /></dd>
 
+    <dt class="col-sm-2">Home Branch</dt>
+    <dd class="col-sm-10">@Model.HomeBranch?.Name</dd>
+
+    <dt class="col-sm-2">Current Branch</dt>
+    <dd class="col-sm-10">
+        @Model.CurrentBranch?.Name
+        @if (Model.CurrentBranchId != Model.HomeBranchId)
+        {
+            <span class="badge text-bg-warning ms-1"><i class="bi bi-arrow-left-right me-1" aria-hidden="true"></i>Away from home</span>
+        }
+    </dd>
+
     <dt class="col-sm-2">Description</dt>
     <dd class="col-sm-10">@Model.Description</dd>
 

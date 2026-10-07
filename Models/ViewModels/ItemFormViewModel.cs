@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using LibrarySystem.Models.Enums;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace LibrarySystem.Models.ViewModels
 {
@@ -32,6 +33,30 @@ namespace LibrarySystem.Models.ViewModels
 
         [Required]
         public ItemStatus Status { get; set; } = ItemStatus.Available;
+
+        [Required(ErrorMessage = "Select a home branch.")]
+        [Display(Name = "Home Branch")]
+        public int HomeBranchId { get; set; }
+
+        /// <summary>
+        /// On Create this is editable alongside HomeBranchId. On Edit it's posted back
+        /// via a hidden field and shown read-only - location changes go through
+        /// Transfers instead, so there's one auditable path for where an item is.
+        /// </summary>
+        [Required(ErrorMessage = "Select a current branch.")]
+        [Display(Name = "Current Branch")]
+        public int CurrentBranchId { get; set; }
+
+        /// <summary>Display name for the read-only Current Branch on Edit - populated by the controller.</summary>
+        public string CurrentBranchName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Branch options for the Home Branch dropdown (and Current Branch on Create).
+        /// Always active branches, plus the item's own current assignment even if it
+        /// has since been deactivated, so Edit never silently shows a wrong
+        /// pre-selection - populated by the controller.
+        /// </summary>
+        public IEnumerable<SelectListItem> Branches { get; set; } = [];
 
         [StringLength(150)]
         public string? Author { get; set; }

@@ -4,6 +4,7 @@ using LibrarySystem.Models.Enums;
 using LibrarySystem.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
 namespace LibrarySystem.Controllers
@@ -18,24 +19,29 @@ namespace LibrarySystem.Controllers
     {
         private readonly ApplicationDbContext _context = context;
 
-        /// <summary>Lists every item across all three types with its type badge and status.</summary>
+        /// <summary>Lists every item across all three types with its type badge, status and current branch.</summary>
         public async Task<IActionResult> Index()
         {
-            var items = await _context.Items.AsNoTracking().OrderBy(i => i.Name).ToListAsync();
+            var items = await _context.Items.AsNoTracking().Include(i => i.CurrentBranch).OrderBy(i => i.Name).ToListAsync();
             return View(items.Select(ItemListItemViewModel.FromItem));
         }
 
         /// <summary>Shows the full detail of a single item, including its type-specific fields.</summary>
         public async Task<IActionResult> Details(int id)
         {
-            var item = await _context.Items.AsNoTracking().FirstOrDefaultAsync(i => i.Id == id);
+            var item = await _context.Items.AsNoTracking()
+                .Include(i => i.HomeBranch)
+                .Include(i => i.CurrentBranch)
+                .FirstOrDefaultAsync(i => i.Id == id);
             return item is null ? NotFound() : View(item);
         }
 
         /// <summary>Renders a blank create form defaulted to Book.</summary>
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            return View(new ItemFormViewModel { ItemType = ItemTypeOption.Book, Status = ItemStatus.Available });
+            var model = new ItemFormViewModel { ItemType = ItemTypeOption.Book, Status = ItemStatus.Available };
+            model.Branches = await GetBranchOptionsAsync();
+            return View(model);
         }
 
         /// <summary>Creates a new item of the type selected in the form.</summary>
@@ -45,6 +51,7 @@ namespace LibrarySystem.Controllers
         {
             if (!ModelState.IsValid)
             {
+                model.Branches = await GetBranchOptionsAsync();
                 return View(model);
             }
 
@@ -52,6 +59,7 @@ namespace LibrarySystem.Controllers
 
             if (!await TrySaveAsync())
             {
+                model.Branches = await GetBranchOptionsAsync();
                 return View(model);
             }
 
@@ -63,7 +71,15 @@ namespace LibrarySystem.Controllers
         public async Task<IActionResult> Edit(int id)
         {
             var item = await _context.Items.FindAsync(id);
-            return item is null ? NotFound() : View(ToFormViewModel(item));
+            if (item is null)
+            {
+                return NotFound();
+            }
+
+            var model = ToFormViewModel(item);
+            model.Branches = await GetBranchOptionsAsync(item.HomeBranchId);
+            model.CurrentBranchName = await GetBranchNameAsync(item.CurrentBranchId);
+            return View(model);
         }
 
         /// <summary>Applies edited fields to an existing item.</summary>
@@ -87,6 +103,8 @@ namespace LibrarySystem.Controllers
 
             if (!ModelState.IsValid)
             {
+                model.Branches = await GetBranchOptionsAsync(model.HomeBranchId);
+                model.CurrentBranchName = await GetBranchNameAsync(model.CurrentBranchId);
                 return View(model);
             }
 
@@ -94,6 +112,8 @@ namespace LibrarySystem.Controllers
 
             if (!await TrySaveAsync())
             {
+                model.Branches = await GetBranchOptionsAsync(model.HomeBranchId);
+                model.CurrentBranchName = await GetBranchNameAsync(model.CurrentBranchId);
                 return View(model);
             }
 
@@ -156,6 +176,8 @@ namespace LibrarySystem.Controllers
             item.Description = model.Description;
             item.LibraryCode = model.LibraryCode;
             item.Status = model.Status;
+            item.HomeBranchId = model.HomeBranchId;
+            item.CurrentBranchId = model.CurrentBranchId;
             return item;
         }
 
@@ -165,6 +187,8 @@ namespace LibrarySystem.Controllers
             item.Description = model.Description;
             item.LibraryCode = model.LibraryCode;
             item.Status = model.Status;
+            item.HomeBranchId = model.HomeBranchId;
+            item.CurrentBranchId = model.CurrentBranchId;
 
             switch (item)
             {
@@ -192,6 +216,8 @@ namespace LibrarySystem.Controllers
                 Description = item.Description,
                 LibraryCode = item.LibraryCode,
                 Status = item.Status,
+                HomeBranchId = item.HomeBranchId,
+                CurrentBranchId = item.CurrentBranchId,
                 ItemType = item switch
                 {
                     Book => ItemTypeOption.Book,
@@ -218,6 +244,28 @@ namespace LibrarySystem.Controllers
             }
 
             return model;
+        }
+
+        /// <summary>
+        /// Branch options for the Home Branch dropdown (and Current Branch on Create):
+        /// active branches, plus <paramref name="alwaysIncludeId"/> if given - so Edit's
+        /// Home Branch dropdown still shows the item's existing branch correctly even
+        /// if it's since been deactivated, without offering it for new assignments.
+        /// </summary>
+        private async Task<List<SelectListItem>> GetBranchOptionsAsync(int? alwaysIncludeId = null)
+        {
+            return await _context.Branches
+                .Where(b => b.IsActive || b.Id == alwaysIncludeId)
+                .OrderBy(b => b.Name)
+                .Select(b => new SelectListItem { Value = b.Id.ToString(), Text = b.Name })
+                .ToListAsync();
+        }
+
+        /// <summary>Looks up a branch's name regardless of whether it's still active - for the read-only Current Branch display on Edit.</summary>
+        private async Task<string> GetBranchNameAsync(int branchId)
+        {
+            var branch = await _context.Branches.FindAsync(branchId);
+            return branch?.Name ?? string.Empty;
         }
 
         /// <summary>Saves pending changes, translating a duplicate library code into a form error.</summary>
