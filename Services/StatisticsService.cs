@@ -10,11 +10,17 @@ namespace LibrarySystem.Services
     public class StatisticsService(ApplicationDbContext context, ILibraryClock clock) : IStatisticsService
     {
         /// <inheritdoc />
-        public async Task<BorrowingStatsViewModel> GetBorrowingStatsAsync()
+        public async Task<BorrowingStatsViewModel> GetBorrowingStatsAsync(int? branchId)
         {
             var today = clock.Today;
 
-            var monthlyRaw = await context.Loans
+            var loans = context.Loans.AsQueryable();
+            if (branchId is { } id)
+            {
+                loans = loans.Where(l => l.BorrowedAtBranchId == id);
+            }
+
+            var monthlyRaw = await loans
                 .GroupBy(l => new { l.BorrowedDate.Year, l.BorrowedDate.Month })
                 .Select(g => new { g.Key.Year, g.Key.Month, Count = g.Count() })
                 .OrderBy(g => g.Year).ThenBy(g => g.Month)
@@ -24,7 +30,7 @@ namespace LibrarySystem.Services
                 .Select(g => new BorrowingStatsViewModel.MonthlyLoanCount(new DateTime(g.Year, g.Month, 1).ToString("MMM yyyy"), g.Count))
                 .ToList();
 
-            var mostBorrowed = await context.Loans
+            var mostBorrowed = await loans
                 .GroupBy(l => l.ItemId)
                 .Select(g => new { ItemId = g.Key, Count = g.Count() })
                 .OrderByDescending(g => g.Count)
@@ -32,14 +38,14 @@ namespace LibrarySystem.Services
                 .Join(context.Items, g => g.ItemId, i => i.Id, (g, i) => new BorrowingStatsViewModel.TopBorrowedItem(i.Name, i.LibraryCode, g.Count))
                 .ToListAsync();
 
-            var activeLoans = await context.Loans
+            var activeLoans = await loans
                 .Where(l => l.ReturnedDate == null)
                 .OrderBy(l => l.DueDate)
                 .Select(l => new BorrowingStatsViewModel.ActiveLoanSummary(
                     l.Item!.Name, l.Item.LibraryCode, l.Borrower!.FirstName + " " + l.Borrower.LastName, l.DueDate))
                 .ToListAsync();
 
-            var overdueRaw = await context.Loans
+            var overdueRaw = await loans
                 .Where(l => l.ReturnedDate == null && l.DueDate < today)
                 .OrderBy(l => l.DueDate)
                 .Select(l => new { ItemName = l.Item!.Name, l.Item.LibraryCode, BorrowerName = l.Borrower!.FirstName + " " + l.Borrower.LastName, l.DueDate })
@@ -61,32 +67,82 @@ namespace LibrarySystem.Services
         }
 
         /// <inheritdoc />
-        public async Task<ItemStatusStatsViewModel> GetItemStatusStatsAsync()
+        public async Task<ItemStatusStatsViewModel> GetItemStatusStatsAsync(int? branchId)
         {
-            var overallCounts = await context.Items.GroupBy(i => i.Status).ToDictionaryAsync(g => g.Key, g => g.Count());
+            var items = context.Items.AsQueryable();
+            if (branchId is { } id)
+            {
+                items = items.Where(i => i.CurrentBranchId == id);
+            }
+
+            var overallCounts = await items.GroupBy(i => i.Status).ToDictionaryAsync(g => g.Key, g => g.Count());
             var statusCounts = Enum.GetValues<ItemStatus>()
                 .Select(s => new ItemStatusStatsViewModel.StatusCount(s, overallCounts.GetValueOrDefault(s)))
                 .ToList();
 
-            var bookCounts = await GetCountsByStatusAsync<Book>();
-            var musicCounts = await GetCountsByStatusAsync<Music>();
-            var toyCounts = await GetCountsByStatusAsync<Toy>();
+            var bookCounts = await GetCountsByStatusAsync<Book>(branchId);
+            var musicCounts = await GetCountsByStatusAsync<Music>(branchId);
+            var toyCounts = await GetCountsByStatusAsync<Toy>(branchId);
 
-            var breakdown = new List<ItemStatusStatsViewModel.TypeStatusBreakdown>
+            var breakdownByType = new List<ItemStatusStatsViewModel.TypeStatusBreakdown>
             {
-                BuildBreakdown("Book", bookCounts),
-                BuildBreakdown("Music", musicCounts),
-                BuildBreakdown("Toy", toyCounts)
+                BuildTypeBreakdown("Book", bookCounts),
+                BuildTypeBreakdown("Music", musicCounts),
+                BuildTypeBreakdown("Toy", toyCounts)
             };
 
-            return new ItemStatusStatsViewModel { CountsByStatus = statusCounts, BreakdownByType = breakdown };
+            // One row per branch, each with its own status breakdown. Grouping by
+            // (CurrentBranchId, Status) translates cleanly to SQL; the per-branch
+            // dictionary lookup is done client-side since there are only a handful
+            // of branches.
+            var branchStatusRaw = await items
+                .GroupBy(i => new { i.CurrentBranchId, i.Status })
+                .Select(g => new { g.Key.CurrentBranchId, g.Key.Status, Count = g.Count() })
+                .ToListAsync();
+            var branchStatusLookup = branchStatusRaw.ToDictionary(r => (r.CurrentBranchId, r.Status), r => r.Count);
+
+            var branchesQuery = context.Branches.AsQueryable();
+            if (branchId is { } filterBranchId)
+            {
+                branchesQuery = branchesQuery.Where(b => b.Id == filterBranchId);
+            }
+            var branches = await branchesQuery.OrderBy(b => b.Name).ToListAsync();
+
+            var breakdownByBranch = branches
+                .Select(b => new ItemStatusStatsViewModel.BranchStatusBreakdown(
+                    b.Name,
+                    branchStatusLookup.GetValueOrDefault((b.Id, ItemStatus.Available)),
+                    branchStatusLookup.GetValueOrDefault((b.Id, ItemStatus.Borrowed)),
+                    branchStatusLookup.GetValueOrDefault((b.Id, ItemStatus.Damaged)),
+                    branchStatusLookup.GetValueOrDefault((b.Id, ItemStatus.Destroyed))))
+                .ToList();
+
+            var awayFromHome = await items
+                .Where(i => i.CurrentBranchId != i.HomeBranchId)
+                .OrderBy(i => i.Name)
+                .Select(i => new ItemStatusStatsViewModel.AwayFromHomeItem(i.Name, i.LibraryCode, i.HomeBranch!.Name, i.CurrentBranch!.Name))
+                .ToListAsync();
+
+            return new ItemStatusStatsViewModel
+            {
+                CountsByStatus = statusCounts,
+                BreakdownByType = breakdownByType,
+                BreakdownByBranch = breakdownByBranch,
+                AwayFromHomeCount = awayFromHome.Count,
+                AwayFromHomeItems = awayFromHome
+            };
         }
 
         /// <inheritdoc />
-        public async Task<FineStatsViewModel> GetFineStatsAsync()
+        public async Task<FineStatsViewModel> GetFineStatsAsync(int? branchId)
         {
-            var returnedLoans = await context.Loans
-                .Where(l => l.ReturnedDate != null)
+            var loans = context.Loans.Where(l => l.ReturnedDate != null);
+            if (branchId is { } id)
+            {
+                loans = loans.Where(l => l.BorrowedAtBranchId == id);
+            }
+
+            var returnedLoans = await loans
                 .Select(l => new { l.FineAmount, l.FinePaid })
                 .ToListAsync();
 
@@ -119,12 +175,18 @@ namespace LibrarySystem.Services
                 .ToList();
         }
 
-        private async Task<Dictionary<ItemStatus, int>> GetCountsByStatusAsync<TItem>() where TItem : Item
+        private async Task<Dictionary<ItemStatus, int>> GetCountsByStatusAsync<TItem>(int? branchId) where TItem : Item
         {
-            return await context.Items.OfType<TItem>().GroupBy(i => i.Status).ToDictionaryAsync(g => g.Key, g => g.Count());
+            var query = context.Items.OfType<TItem>().AsQueryable();
+            if (branchId is { } id)
+            {
+                query = query.Where(i => i.CurrentBranchId == id);
+            }
+
+            return await query.GroupBy(i => i.Status).ToDictionaryAsync(g => g.Key, g => g.Count());
         }
 
-        private static ItemStatusStatsViewModel.TypeStatusBreakdown BuildBreakdown(string typeLabel, Dictionary<ItemStatus, int> counts) => new(
+        private static ItemStatusStatsViewModel.TypeStatusBreakdown BuildTypeBreakdown(string typeLabel, Dictionary<ItemStatus, int> counts) => new(
             typeLabel,
             counts.GetValueOrDefault(ItemStatus.Available),
             counts.GetValueOrDefault(ItemStatus.Borrowed),

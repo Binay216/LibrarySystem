@@ -39,9 +39,28 @@
     var typeBorrowed = JsonSerializer.Serialize(Model.ItemStatus.BreakdownByType.Select(t => t.Borrowed));
     var typeDamaged = JsonSerializer.Serialize(Model.ItemStatus.BreakdownByType.Select(t => t.Damaged));
     var typeDestroyed = JsonSerializer.Serialize(Model.ItemStatus.BreakdownByType.Select(t => t.Destroyed));
+
+    var branchLabels = JsonSerializer.Serialize(Model.ItemStatus.BreakdownByBranch.Select(b => b.BranchName));
+    var branchAvailable = JsonSerializer.Serialize(Model.ItemStatus.BreakdownByBranch.Select(b => b.Available));
+    var branchBorrowed = JsonSerializer.Serialize(Model.ItemStatus.BreakdownByBranch.Select(b => b.Borrowed));
+    var branchDamaged = JsonSerializer.Serialize(Model.ItemStatus.BreakdownByBranch.Select(b => b.Damaged));
+    var branchDestroyed = JsonSerializer.Serialize(Model.ItemStatus.BreakdownByBranch.Select(b => b.Destroyed));
 }
 
 <h1>Manager Dashboard</h1>
+
+<form asp-action="Index" method="get" class="row g-2 mb-3">
+    <div class="col-auto">
+        <label for="branchId" class="form-label mb-0">Branch</label>
+        <select name="branchId" id="branchId" class="form-select" onchange="this.form.submit()">
+            <option value="">All Branches</option>
+            @foreach (var branch in Model.Branches)
+            {
+                <option value="@branch.Value" selected="@(Model.SelectedBranchId.HasValue && Model.SelectedBranchId.Value.ToString() == branch.Value)">@branch.Text</option>
+            }
+        </select>
+    </div>
+</form>
 
 <ul class="nav nav-tabs" role="tablist">
     <li class="nav-item" role="presentation">
@@ -152,7 +171,7 @@
             </div>
         </div>
 
-        <div class="table-responsive">
+        <div class="table-responsive mb-4">
             <table class="table table-sm">
                 <thead><tr><th>Type</th><th>Available</th><th>Borrowed</th><th>Damaged</th><th>Destroyed</th></tr></thead>
                 <tbody>
@@ -169,6 +188,64 @@
                 </tbody>
             </table>
         </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-md-7">
+                <h5>Stock by Branch</h5>
+                <div style="height:280px"><canvas id="branchStatusChart"></canvas></div>
+            </div>
+            <div class="col-md-5">
+                <div class="card h-100 border-start border-warning border-4">
+                    <div class="card-body">
+                        <div class="text-muted small">Items Away From Home Branch</div>
+                        <div class="fs-2">@Model.ItemStatus.AwayFromHomeCount</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive mb-4">
+            <table class="table table-sm">
+                <thead><tr><th>Branch</th><th>Available</th><th>Borrowed</th><th>Damaged</th><th>Destroyed</th></tr></thead>
+                <tbody>
+                    @foreach (var row in Model.ItemStatus.BreakdownByBranch)
+                    {
+                        <tr>
+                            <td>@row.BranchName</td>
+                            <td>@row.Available</td>
+                            <td>@row.Borrowed</td>
+                            <td>@row.Damaged</td>
+                            <td>@row.Destroyed</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <h5>Items Away From Home Branch</h5>
+        @if (Model.ItemStatus.AwayFromHomeItems.Count == 0)
+        {
+            <p class="text-muted">Every item is currently at its home branch.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead><tr><th>Item</th><th>Library Code</th><th>Home Branch</th><th>Current Branch</th></tr></thead>
+                    <tbody>
+                        @foreach (var item in Model.ItemStatus.AwayFromHomeItems)
+                        {
+                            <tr class="table-warning">
+                                <td>@item.ItemName</td>
+                                <td>@item.LibraryCode</td>
+                                <td>@item.HomeBranchName</td>
+                                <td>@item.CurrentBranchName</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     </div>
 
     <div class="tab-pane fade" id="fines-pane" role="tabpanel">
@@ -271,6 +348,23 @@
                     { label: 'Borrowed', data: @Html.Raw(typeBorrowed), backgroundColor: '@ColorBorrowed' },
                     { label: 'Damaged', data: @Html.Raw(typeDamaged), backgroundColor: '@ColorDamaged' },
                     { label: 'Destroyed', data: @Html.Raw(typeDestroyed), backgroundColor: '@ColorDestroyed' }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } } }
+            }
+        });
+
+        new Chart(document.getElementById('branchStatusChart'), {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(branchLabels),
+                datasets: [
+                    { label: 'Available', data: @Html.Raw(branchAvailable), backgroundColor: '@ColorAvailable' },
+                    { label: 'Borrowed', data: @Html.Raw(branchBorrowed), backgroundColor: '@ColorBorrowed' },
+                    { label: 'Damaged', data: @Html.Raw(branchDamaged), backgroundColor: '@ColorDamaged' },
+                    { label: 'Destroyed', data: @Html.Raw(branchDestroyed), backgroundColor: '@ColorDestroyed' }
                 ]
             },
             options: {

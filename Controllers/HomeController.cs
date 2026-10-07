@@ -14,7 +14,7 @@ namespace LibrarySystem.Controllers
         {
             var model = new HomeViewModel
             {
-                ItemStatus = await statisticsService.GetItemStatusStatsAsync(),
+                ItemStatus = await statisticsService.GetItemStatusStatsAsync(null),
                 FeaturedItems = await statisticsService.GetFeaturedItemsAsync()
             };
             return View(model);

@@ -6,14 +6,20 @@
 <h1>Catalog</h1>
 
 <form asp-action="Index" method="get" class="row g-2 mb-4">
-    <div class="col-12 col-md-5">
+    <div class="col-12 col-md-3">
         <label asp-for="SearchTerm" class="form-label visually-hidden"></label>
         <input asp-for="SearchTerm" class="form-control" placeholder="Search by name or description" />
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md-2">
         <label asp-for="ItemType" class="form-label visually-hidden"></label>
         <select asp-for="ItemType" asp-items="Html.GetEnumSelectList<ItemTypeOption>()" class="form-select">
             <option value="">All Types</option>
+        </select>
+    </div>
+    <div class="col-6 col-md-3">
+        <label asp-for="BranchId" class="form-label visually-hidden"></label>
+        <select asp-for="BranchId" asp-items="Model.Branches" class="form-select">
+            <option value="">All Branches</option>
         </select>
     </div>
     <div class="col-6 col-md-2 d-flex align-items-center">
@@ -22,7 +28,7 @@
             <label asp-for="AvailableOnly" class="form-check-label">Available only</label>
         </div>
     </div>
-    <div class="col-12 col-md-2">
+    <div class="col-6 col-md-2">
         <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1" aria-hidden="true"></i>Search</button>
     </div>
 </form>
@@ -52,7 +58,10 @@ else
                         <p class="card-text text-muted small">@item.Summary</p>
                         <p class="card-text">@item.Description</p>
                     </div>
-                    <div class="card-footer text-muted small">@item.LibraryCode</div>
+                    <div class="card-footer text-muted small">
+                        @item.LibraryCode
+                        <span class="float-end"><i class="bi bi-geo-alt me-1" aria-hidden="true"></i>@item.CurrentBranchName</span>
+                    </div>
                 </div>
             </div>
         }
