@@ -88,7 +88,7 @@ else
                         </td>
                         <td><partial name="_NotificationTypeBadge" model="@notification.Type" /></td>
                         <td>@notification.Recipient</td>
-                        <td>@notification.Subject</td>
+                        <td>@(string.IsNullOrEmpty(notification.Subject) ? "—" : notification.Subject)</td>
                         <td><partial name="_NotificationStatusBadge" model="@notification.Status" /></td>
                         <td class="text-end">
                             <a asp-action="Details" asp-route-id="@notification.Id" class="btn btn-sm btn-outline-secondary">Details</a>

@@ -86,7 +86,13 @@ namespace LibrarySystem.Services
                 ["BranchName"] = currentBranch.Name
             }, loan.Id);
 
-            return LoanResult.Success(loan, $"'{item.Name}' borrowed by {borrower.FirstName} {borrower.LastName}. Due back {loan.DueDate:d}.");
+            var message = $"'{item.Name}' borrowed by {borrower.FirstName} {borrower.LastName}. Due back {loan.DueDate:d}.";
+            if (readyReservation is not null)
+            {
+                message += " Reservation fulfilled.";
+            }
+
+            return LoanResult.Success(loan, message);
         }
 
         /// <inheritdoc />
