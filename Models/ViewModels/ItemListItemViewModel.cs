@@ -30,6 +30,15 @@ namespace LibrarySystem.Models.ViewModels
         /// <summary>True when the item isn't currently at its home branch - e.g. mid-transfer.</summary>
         public bool IsAwayFromHome { get; set; }
 
+        /// <summary>
+        /// How many active reservations (Waiting or Ready) this item has - how
+        /// many people are ahead of a patron who'd join the queue now. Zero by
+        /// default; not set by FromItem since it comes from a separate query -
+        /// the caller (CatalogController) fills it in afterward for whichever
+        /// items it's displaying.
+        /// </summary>
+        public int QueueCount { get; set; }
+
         public static ItemListItemViewModel FromItem(Item item)
         {
             var (typeLabel, summary) = item switch

@@ -47,6 +47,18 @@ namespace LibrarySystem.Services
         Task<int> GetWaitingCountAsync(int itemId);
 
         /// <summary>
+        /// How many active (Waiting or Ready) reservations each of the given
+        /// items has, batched into one query. An item with none is simply absent
+        /// from the result rather than present with a zero. For "how many people
+        /// are ahead of me" - a patron-facing question - a Ready hold still
+        /// counts: the item is reserved for that person until they collect it or
+        /// it expires, so excluding it would undercount. GetWaitingCountAsync
+        /// answers a different, staff-facing question ("who hasn't been offered
+        /// it yet") and is deliberately narrower.
+        /// </summary>
+        Task<Dictionary<int, int>> GetActiveReservationCountsAsync(IEnumerable<int> itemIds);
+
+        /// <summary>
         /// The current Ready reservation for an item, if any - at most one exists
         /// at a time, since a reservation only becomes Ready once the previous
         /// Ready one has left that state (Collected, Expired or Cancelled).

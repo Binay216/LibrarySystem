@@ -196,6 +196,17 @@ namespace LibrarySystem.Services
         };
 
         /// <inheritdoc />
+        public async Task<Dictionary<int, int>> GetActiveReservationCountsAsync(IEnumerable<int> itemIds)
+        {
+            var ids = itemIds.ToList();
+            return await context.Reservations
+                .Where(r => ids.Contains(r.ItemId) && (r.Status == ReservationStatus.Waiting || r.Status == ReservationStatus.Ready))
+                .GroupBy(r => r.ItemId)
+                .Select(g => new { ItemId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.ItemId, x => x.Count);
+        }
+
+        /// <inheritdoc />
         public async Task<int> GetWaitingCountAsync(int itemId)
         {
             return await context.Reservations.CountAsync(r => r.ItemId == itemId && r.Status == ReservationStatus.Waiting);

@@ -2,6 +2,7 @@ using LibrarySystem.Data;
 using LibrarySystem.Models;
 using LibrarySystem.Models.Enums;
 using LibrarySystem.Models.ViewModels;
+using LibrarySystem.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -11,7 +12,7 @@ namespace LibrarySystem.Controllers
 {
     /// <summary>Public, anonymous item search - requirement 4.</summary>
     [AllowAnonymous]
-    public class CatalogController(ApplicationDbContext context) : Controller
+    public class CatalogController(ApplicationDbContext context, IReservationService reservationService) : Controller
     {
         /// <summary>Searches items by name/description, optionally filtered by type and availability.</summary>
         public async Task<IActionResult> Index(CatalogSearchViewModel model)
@@ -44,6 +45,15 @@ namespace LibrarySystem.Controllers
 
             var items = await query.OrderBy(i => i.Name).ToListAsync();
             model.Results = items.Select(ItemListItemViewModel.FromItem).ToList();
+
+            // Only items that aren't Available can have a queue, but it's just as
+            // cheap to batch the lookup for every result as to filter first.
+            var queueCounts = await reservationService.GetActiveReservationCountsAsync(items.Select(i => i.Id));
+            foreach (var result in model.Results)
+            {
+                result.QueueCount = queueCounts.GetValueOrDefault(result.Id);
+            }
+
             model.Branches = await GetActiveBranchOptionsAsync();
 
             return View(model);
