@@ -13,8 +13,10 @@ namespace LibrarySystem.Data
     /// and current branch deliberately differ, with a matching open Transfer request
     /// moving it back, and a second, already-completed Transfer gives the status
     /// filter something to show on both sides. Borrowers deliberately mix having a
-    /// phone number or not, so both notification channels appear in the data.
-    /// Guarded by an existing-items check,
+    /// phone number or not, so both notification channels appear in the data. Two
+    /// borrowers are queued for a borrowed item, so the reservation queue has
+    /// something to show before any return has triggered a promotion. Guarded by
+    /// an existing-items check,
     /// so it only runs once - changing this data requires dropping and re-migrating
     /// the database.
     /// </summary>
@@ -189,6 +191,17 @@ namespace LibrarySystem.Data
             };
 
             context.Transfers.AddRange(transfers);
+
+            var reservations = new List<Reservation>
+            {
+                // Two borrowers queued for the Hobbit, which Alice currently has
+                // out - demonstrates queue ordering/positions on a fresh database
+                // without yet exercising promotion (that needs a return to trigger).
+                new() { Item = hobbit, Borrower = brian, PlacedDate = today.AddDays(-4), QueuePosition = 1, Status = ReservationStatus.Waiting },
+                new() { Item = hobbit, Borrower = carla, PlacedDate = today.AddDays(-2), QueuePosition = 2, Status = ReservationStatus.Waiting },
+            };
+
+            context.Reservations.AddRange(reservations);
 
             context.SaveChanges();
         }

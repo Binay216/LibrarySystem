@@ -48,10 +48,10 @@ namespace LibrarySystem.Services
 
             (NotificationType.ReservationReady, NotificationChannel.Email) => new(
                 "Your reservation is ready for pickup",
-                "Hi {BorrowerFirstName},\n\n'{ItemName}' ({LibraryCode}) is ready for you to pick up at {BranchName}.\n\nThanks."),
+                "Hi {BorrowerFirstName},\n\n'{ItemName}' ({LibraryCode}) is ready for you to pick up at {BranchName}. Please collect it by {ExpiryDate}, or your reservation will expire and pass to the next person in the queue.\n\nThanks."),
             (NotificationType.ReservationReady, NotificationChannel.Sms) => new(
                 string.Empty,
-                "'{ItemName}' is ready for pickup at {BranchName}."),
+                "'{ItemName}' is ready for pickup at {BranchName} - collect by {ExpiryDate}."),
 
             (NotificationType.TransferArrived, NotificationChannel.Email) => new(
                 "An item you reserved has arrived",

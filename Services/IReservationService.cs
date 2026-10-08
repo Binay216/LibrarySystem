@@ -29,5 +29,31 @@ namespace LibrarySystem.Services
 
         /// <summary>How many borrowers are currently Waiting (not yet Ready) for an item.</summary>
         Task<int> GetWaitingCountAsync(int itemId);
+
+        /// <summary>
+        /// The current Ready reservation for an item, if any - at most one exists
+        /// at a time, since a reservation only becomes Ready once the previous
+        /// Ready one has left that state (Collected, Expired or Cancelled).
+        /// Returned tracked, not no-tracking: BorrowAsync uses this to decide
+        /// whether to hold the item, and mutates the result directly so it saves
+        /// in the same unit of work as the loan it creates.
+        /// </summary>
+        Task<Reservation?> GetReadyReservationAsync(int itemId);
+
+        /// <summary>
+        /// Promotes the first Waiting reservation (by queue position) on an item
+        /// to Ready: stamps ReadyDate, sets ExpiryDate three days out, and queues
+        /// a best-effort ReservationReady notification (a failure here is logged
+        /// and never bubbles up). Returns false if there was no one Waiting, or
+        /// if the item has since been Destroyed (nothing to collect).
+        /// </summary>
+        Task<bool> PromoteNextAsync(int itemId);
+
+        /// <summary>
+        /// Finds every Ready reservation past its ExpiryDate, marks it Expired,
+        /// and promotes the next Waiting reservation (if any) for each affected
+        /// item - which cascades its own ReservationReady notification.
+        /// </summary>
+        Task<ReservationExpiryResult> ExpireStaleAsync();
     }
 }

@@ -15,6 +15,7 @@ namespace LibrarySystem.Services
         ICurrentBranchAccessor currentBranchAccessor,
         ITransferService transferService,
         INotificationService notificationService,
+        IReservationService reservationService,
         ILogger<LoanService> logger) : ILoanService
     {
         private readonly FinePolicyOptions _finePolicy = finePolicyOptions.Value;
@@ -45,6 +46,15 @@ namespace LibrarySystem.Services
                 return LoanResult.Failure("Select a valid, active borrower.");
             }
 
+            // Hold the item for whoever it's Ready for - unless that's the same
+            // borrower doing the borrowing, in which case this is them collecting
+            // it, not jumping the queue.
+            var readyReservation = await reservationService.GetReadyReservationAsync(item.Id);
+            if (readyReservation is not null && readyReservation.BorrowerId != borrower.Id)
+            {
+                return LoanResult.Failure($"'{item.Name}' is on hold for another borrower's reservation.");
+            }
+
             var today = clock.Today;
             var loan = new Loan
             {
@@ -57,6 +67,15 @@ namespace LibrarySystem.Services
 
             item.Status = ItemStatus.Borrowed;
             context.Loans.Add(loan);
+
+            if (readyReservation is not null)
+            {
+                // Same borrower the hold was for (the check above ruled out
+                // anyone else) - this fulfils it. Saved atomically with the loan
+                // below, not via a separate round-trip.
+                readyReservation.Status = ReservationStatus.Collected;
+            }
+
             await context.SaveChangesAsync();
 
             await TryQueueNotificationAsync(borrower.Id, NotificationType.Borrowed, new Dictionary<string, string>
@@ -108,6 +127,16 @@ namespace LibrarySystem.Services
             if (currentBranch.Id != item.HomeBranchId)
             {
                 await transferService.RaiseTransferAsync(item.Id, item.HomeBranchId, "Returning to home branch", actingUserId);
+            }
+
+            // Only an Available return is collectable - damaged or destroyed
+            // items can't be handed to the next person in the queue. Wrapped the
+            // same way as the notification triggers: the return above has
+            // already succeeded and must stay that way regardless of what
+            // happens here.
+            if (resultingStatus == ItemStatus.Available)
+            {
+                await TryPromoteNextReservationAsync(item.Id);
             }
 
             if (loan.FineAmount > 0)
@@ -271,6 +300,25 @@ namespace LibrarySystem.Services
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to queue a {Type} notification for borrower {BorrowerId}.", type, borrowerId);
+            }
+        }
+
+        /// <summary>
+        /// Promotes the next reservation for an item without letting a failure
+        /// here affect the return that triggered it - same reasoning as
+        /// <see cref="TryQueueNotificationAsync"/>, just one level up: this also
+        /// protects against a failure that isn't itself a notification failure
+        /// (e.g. the save inside PromoteNextAsync), not just the notification it queues.
+        /// </summary>
+        private async Task TryPromoteNextReservationAsync(int itemId)
+        {
+            try
+            {
+                await reservationService.PromoteNextAsync(itemId);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to promote the next reservation for item {ItemId}.", itemId);
             }
         }
     }

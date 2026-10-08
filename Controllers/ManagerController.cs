@@ -10,7 +10,11 @@ namespace LibrarySystem.Controllers
 {
     /// <summary>Read-only statistics dashboards for the Manager role.</summary>
     [Authorize(Roles = "Manager")]
-    public class ManagerController(IStatisticsService statisticsService, ApplicationDbContext context, INotificationSweepService notificationSweepService) : Controller
+    public class ManagerController(
+        IStatisticsService statisticsService,
+        ApplicationDbContext context,
+        INotificationSweepService notificationSweepService,
+        IReservationService reservationService) : Controller
     {
         /// <summary>
         /// Shows borrowing, item status and fine statistics on one dashboard,
@@ -31,15 +35,26 @@ namespace LibrarySystem.Controllers
             return View(model);
         }
 
-        /// <summary>Runs the due-soon/overdue notification sweep on demand and reports what it did.</summary>
+        /// <summary>
+        /// Runs the due-soon/overdue notification sweep and the reservation expiry
+        /// sweep on demand, as one manager action, and reports what both did.
+        /// Composed here rather than inside NotificationSweepService: due-date
+        /// reminders and reservation expiry are two independent concerns that
+        /// happen to both want "manual trigger, on-demand, with a summary" - this
+        /// is the orchestration layer, so it's the natural place to combine them
+        /// without making either service depend on the other.
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SweepNotifications(int? branchId)
         {
-            var result = await notificationSweepService.RunAsync();
+            var notificationResult = await notificationSweepService.RunAsync();
+            var expiryResult = await reservationService.ExpireStaleAsync();
+
             TempData["StatusMessage"] =
-                $"Notification sweep complete: {result.DueSoonQueued} due-soon and {result.OverdueQueued} overdue notification(s) queued, " +
-                $"{result.SkippedAlreadyNotified} already notified today, {result.Failed} failed.";
+                $"Notification sweep complete: {notificationResult.DueSoonQueued} due-soon and {notificationResult.OverdueQueued} overdue notification(s) queued, " +
+                $"{notificationResult.SkippedAlreadyNotified} already notified today, {notificationResult.Failed} failed. " +
+                $"Reservations: {expiryResult.ExpiredCount} expired, {expiryResult.PromotedCount} promoted to the next person in queue.";
             return RedirectToAction(nameof(Index), new { branchId });
         }
 
