@@ -1,0 +1,81 @@
+@model ItemReservationQueueViewModel
+@{
+    ViewData["Title"] = "Reservation Queue";
+}
+
+<h1>Reservation Queue</h1>
+<p class="text-muted">Look up an item by library code to see who's queued for it, in order.</p>
+
+<form asp-action="Queue" method="get" class="row g-2 mb-4">
+    <div class="col-12 col-md-6">
+        <label class="form-label visually-hidden">Library Code</label>
+        <input type="text" name="libraryCode" class="form-control" placeholder="Enter a library code" value="@Model.LibraryCode" autofocus />
+    </div>
+    <div class="col-12 col-md-2">
+        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1" aria-hidden="true"></i>Look Up</button>
+    </div>
+</form>
+
+@if (Model.ErrorMessage is not null)
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+else if (Model.ItemFound)
+{
+    <h2 class="h4">@Model.ItemName</h2>
+
+    @if (Model.Queue.Count == 0)
+    {
+        <div class="empty-state empty-state-positive">
+            <i class="bi bi-check-circle" aria-hidden="true"></i>
+            <p class="mb-0">No one is currently queued for this item.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Position</th>
+                        <th>Borrower</th>
+                        <th>Status</th>
+                        <th>Placed</th>
+                        <th>Expiry</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var entry in Model.Queue)
+                    {
+                        <tr class="@RowClass(entry, Model.Today)">
+                            <td>@entry.QueuePosition</td>
+                            <td>@entry.BorrowerName</td>
+                            <td><partial name="_ReservationStatusBadge" model="@entry.Status" /></td>
+                            <td>@entry.PlacedDate.ToString("d")</td>
+                            <td>@(entry.ExpiryDate?.ToString("d") ?? "-")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+
+@functions {
+    private static string RowClass(ReservationQueueEntryViewModel entry, DateTime today)
+    {
+        if (entry.Status != ReservationStatus.Ready || entry.ExpiryDate is null)
+        {
+            return string.Empty;
+        }
+        if (entry.ExpiryDate.Value.Date < today)
+        {
+            return "table-danger";
+        }
+        if (entry.ExpiryDate.Value.Date <= today.AddDays(1))
+        {
+            return "table-warning";
+        }
+        return string.Empty;
+    }
+}

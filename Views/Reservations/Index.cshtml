@@ -1,0 +1,103 @@
+@model ReservationListViewModel
+@{
+    ViewData["Title"] = "Reservations";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Reservations</h1>
+    <div class="d-flex gap-2">
+        <a asp-action="Queue" class="btn btn-outline-secondary"><i class="bi bi-search me-1" aria-hidden="true"></i>Look Up Queue</a>
+        <a asp-action="Place" class="btn btn-primary"><i class="bi bi-bookmark-plus me-1" aria-hidden="true"></i>Place Reservation</a>
+    </div>
+</div>
+
+@if (TempData["StatusMessage"] is string statusMessage)
+{
+    var succeeded = TempData["StatusSucceeded"] is bool s && s;
+    <div class="alert @(succeeded ? "alert-success" : "alert-danger")">@statusMessage</div>
+}
+
+<form asp-action="Index" method="get" class="row g-2 mb-4">
+    <div class="col-auto">
+        <label for="status" class="form-label mb-0">Status</label>
+        <select name="status" id="status" class="form-select" onchange="this.form.submit()">
+            <option value="">All Active (Waiting / Ready)</option>
+            <option value="Waiting" selected="@(Model.StatusFilter == ReservationStatus.Waiting)">Waiting</option>
+            <option value="Ready" selected="@(Model.StatusFilter == ReservationStatus.Ready)">Ready</option>
+        </select>
+    </div>
+</form>
+
+@if (Model.Reservations.Count == 0)
+{
+    <div class="empty-state">
+        <i class="bi bi-bookmark-x" aria-hidden="true"></i>
+        <p class="mb-0">No active reservations.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Library Code</th>
+                    <th>Borrower</th>
+                    <th>Position</th>
+                    <th>Status</th>
+                    <th>Placed</th>
+                    <th>Expiry</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    int? previousItemId = null;
+                }
+                @foreach (var entry in Model.Reservations)
+                {
+                    var isNewGroup = previousItemId is not null && previousItemId != entry.ItemId;
+                    var rowClass = $"{RowClass(entry, Model.Today)} {(isNewGroup ? "border-top border-2" : "")}".Trim();
+                    previousItemId = entry.ItemId;
+                    <tr class="@rowClass">
+                        <td>@entry.ItemName</td>
+                        <td>@entry.LibraryCode</td>
+                        <td>@entry.BorrowerName</td>
+                        <td>@entry.QueuePosition</td>
+                        <td><partial name="_ReservationStatusBadge" model="@entry.Status" /></td>
+                        <td>@entry.PlacedDate.ToString("d")</td>
+                        <td>@(entry.ExpiryDate?.ToString("d") ?? "-")</td>
+                        <td class="text-end">
+                            <a asp-action="Queue" asp-route-itemId="@entry.ItemId" class="btn btn-sm btn-outline-secondary">View Queue</a>
+                            <form asp-action="Cancel" method="post" class="d-inline">
+                                <input type="hidden" name="id" value="@entry.Id" />
+                                <input type="hidden" name="status" value="@Model.StatusFilter" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@functions {
+    private static string RowClass(ReservationQueueEntryViewModel entry, DateTime today)
+    {
+        if (entry.Status != ReservationStatus.Ready || entry.ExpiryDate is null)
+        {
+            return string.Empty;
+        }
+        if (entry.ExpiryDate.Value.Date < today)
+        {
+            return "table-danger";
+        }
+        if (entry.ExpiryDate.Value.Date <= today.AddDays(1))
+        {
+            return "table-warning";
+        }
+        return string.Empty;
+    }
+}

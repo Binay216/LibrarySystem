@@ -1,0 +1,13 @@
+@model ReservationStatus
+@{
+    var badgeClass = Model switch
+    {
+        ReservationStatus.Waiting => "text-bg-warning",
+        ReservationStatus.Ready => "text-bg-success",
+        ReservationStatus.Collected => "text-bg-primary",
+        ReservationStatus.Expired => "text-bg-danger",
+        ReservationStatus.Cancelled => "text-bg-secondary",
+        _ => "text-bg-secondary"
+    };
+}
+<span class="badge @badgeClass">@Model</span>

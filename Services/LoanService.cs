@@ -67,16 +67,18 @@ namespace LibrarySystem.Services
 
             item.Status = ItemStatus.Borrowed;
             context.Loans.Add(loan);
+            await context.SaveChangesAsync();
 
+            // Same borrower the hold was for (the check above ruled out anyone
+            // else) - this fulfils it. Goes through MarkCollectedAsync rather
+            // than setting the status here directly, so the queue-position
+            // renumbering it does stays encapsulated in ReservationService
+            // instead of being duplicated at every call site. Best-effort, same
+            // as the notification below: the loan above has already succeeded.
             if (readyReservation is not null)
             {
-                // Same borrower the hold was for (the check above ruled out
-                // anyone else) - this fulfils it. Saved atomically with the loan
-                // below, not via a separate round-trip.
-                readyReservation.Status = ReservationStatus.Collected;
+                await TryMarkReservationCollectedAsync(readyReservation.Id);
             }
-
-            await context.SaveChangesAsync();
 
             await TryQueueNotificationAsync(borrower.Id, NotificationType.Borrowed, new Dictionary<string, string>
             {
@@ -325,6 +327,19 @@ namespace LibrarySystem.Services
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to promote the next reservation for item {ItemId}.", itemId);
+            }
+        }
+
+        /// <summary>Marks a reservation collected without letting a failure here affect the borrow that fulfilled it - same reasoning as <see cref="TryPromoteNextReservationAsync"/>.</summary>
+        private async Task TryMarkReservationCollectedAsync(int reservationId)
+        {
+            try
+            {
+                await reservationService.MarkCollectedAsync(reservationId);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to mark reservation {ReservationId} as collected.", reservationId);
             }
         }
     }

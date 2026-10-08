@@ -1,0 +1,31 @@
+@model PlaceReservationViewModel
+@{
+    ViewData["Title"] = "Place Reservation";
+}
+
+<h1>Place Reservation</h1>
+
+<form asp-action="Place" method="post" class="col-md-6">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="mb-3">
+        <label asp-for="LibraryCode" class="form-label"></label>
+        <input asp-for="LibraryCode" class="form-control" autofocus />
+        <span asp-validation-for="LibraryCode" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="BorrowerId" class="form-label"></label>
+        <select asp-for="BorrowerId" asp-items="Model.Borrowers" class="form-select">
+            <option value="">-- Select a borrower --</option>
+        </select>
+        <span asp-validation-for="BorrowerId" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary"><i class="bi bi-bookmark-plus me-1" aria-hidden="true"></i>Reserve</button>
+    <a asp-action="Index" class="btn btn-secondary">Back</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,6 +1,7 @@
 using LibrarySystem.Data;
 using LibrarySystem.Models;
 using LibrarySystem.Models.Enums;
+using LibrarySystem.Models.ViewModels;
 using Microsoft.EntityFrameworkCore;
 
 namespace LibrarySystem.Services
@@ -48,20 +49,22 @@ namespace LibrarySystem.Services
                 return ReservationResult.Failure($"{borrower.FirstName} {borrower.LastName} already has an active reservation for '{item.Name}'.");
             }
 
-            var activeCount = await context.Reservations.CountAsync(r =>
-                r.ItemId == itemId
-                && (r.Status == ReservationStatus.Waiting || r.Status == ReservationStatus.Ready));
-
+            // Position is derived from the queue's actual state, not counted -
+            // see RenumberQueueAsync. A count would just perpetuate any existing
+            // drift instead of correcting it.
             var reservation = new Reservation
             {
                 ItemId = item.Id,
                 BorrowerId = borrower.Id,
                 PlacedDate = clock.Today,
-                QueuePosition = activeCount + 1,
+                QueuePosition = 0,
                 Status = ReservationStatus.Waiting
             };
 
             context.Reservations.Add(reservation);
+            await context.SaveChangesAsync();
+
+            await RenumberQueueAsync(itemId);
             await context.SaveChangesAsync();
 
             return ReservationResult.Success(reservation, $"'{item.Name}' reserved for {borrower.FirstName} {borrower.LastName} - position {reservation.QueuePosition} in the queue.");
@@ -82,43 +85,115 @@ namespace LibrarySystem.Services
             }
 
             reservation.Status = ReservationStatus.Cancelled;
+            await context.SaveChangesAsync();
 
-            // Re-derive positions for everyone still active on this item, rather
-            // than just decrementing whoever was behind the cancelled slot. Both
-            // get the same end result when the queue was already consistent, but
-            // re-deriving from PlacedDate order is the one that's still correct
-            // even if it wasn't - it can't drift, because it never trusts the
-            // existing QueuePosition values at all, just rebuilds them from an
-            // independent fact (placement order). Cheap to do in full: an item's
-            // reservation queue is a handful of rows, never worth optimizing into
-            // a partial shift.
-            var stillActive = await context.Reservations
-                .Where(r => r.ItemId == reservation.ItemId
-                    && r.Id != reservation.Id
-                    && (r.Status == ReservationStatus.Waiting || r.Status == ReservationStatus.Ready))
-                .OrderBy(r => r.PlacedDate)
-                .ThenBy(r => r.Id)
-                .ToListAsync();
-
-            for (var i = 0; i < stillActive.Count; i++)
-            {
-                stillActive[i].QueuePosition = i + 1;
-            }
-
+            await RenumberQueueAsync(reservation.ItemId);
             await context.SaveChangesAsync();
 
             return ReservationResult.Success(reservation, $"Reservation for '{reservation.Item!.Name}' cancelled.");
         }
 
         /// <inheritdoc />
-        public async Task<List<Reservation>> GetQueueAsync(int itemId)
+        public async Task<ReservationResult> MarkCollectedAsync(int reservationId)
         {
-            return await context.Reservations
+            var reservation = await context.Reservations.Include(r => r.Item).FirstOrDefaultAsync(r => r.Id == reservationId);
+            if (reservation is null)
+            {
+                return ReservationResult.Failure("Reservation not found.");
+            }
+
+            if (reservation.Status != ReservationStatus.Ready)
+            {
+                return ReservationResult.Failure($"This reservation is {reservation.Status}, not Ready, and can't be marked collected.");
+            }
+
+            reservation.Status = ReservationStatus.Collected;
+            await context.SaveChangesAsync();
+
+            await RenumberQueueAsync(reservation.ItemId);
+            await context.SaveChangesAsync();
+
+            return ReservationResult.Success(reservation, $"Reservation for '{reservation.Item!.Name}' marked collected.");
+        }
+
+        /// <summary>
+        /// Re-derives 1-based queue positions for every still-active (Waiting or
+        /// Ready) reservation on an item, ordered by PlacedDate (first reserved,
+        /// first in line) with Id as a tiebreaker. The single place positions are
+        /// ever assigned - every path that can change who's active on an item
+        /// (place, cancel, collect, expire, promote) calls this afterward, so
+        /// positions are always rebuilt from an independent fact rather than
+        /// trusted or incrementally patched - they can't drift, no matter how a
+        /// reservation entered or left the active set. Queries the database, so
+        /// callers must save whatever status change led here *before* calling
+        /// this, not after - otherwise this sees the pre-change state.
+        /// </summary>
+        private async Task RenumberQueueAsync(int itemId)
+        {
+            var active = await context.Reservations
+                .Where(r => r.ItemId == itemId && (r.Status == ReservationStatus.Waiting || r.Status == ReservationStatus.Ready))
+                .OrderBy(r => r.PlacedDate)
+                .ThenBy(r => r.Id)
+                .ToListAsync();
+
+            for (var i = 0; i < active.Count; i++)
+            {
+                active[i].QueuePosition = i + 1;
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<List<ReservationQueueEntryViewModel>> GetQueueAsync(int itemId)
+        {
+            var reservations = await context.Reservations
+                .Include(r => r.Item)
                 .Include(r => r.Borrower)
                 .Where(r => r.ItemId == itemId && (r.Status == ReservationStatus.Waiting || r.Status == ReservationStatus.Ready))
                 .OrderBy(r => r.QueuePosition)
                 .ToListAsync();
+
+            return reservations.Select(ToEntry).ToList();
         }
+
+        /// <inheritdoc />
+        public async Task<List<ReservationQueueEntryViewModel>> GetActiveReservationsAsync(ReservationStatus? statusFilter)
+        {
+            var query = context.Reservations
+                .Include(r => r.Item)
+                .Include(r => r.Borrower)
+                .Where(r => r.Status == ReservationStatus.Waiting || r.Status == ReservationStatus.Ready);
+
+            if (statusFilter is { } status)
+            {
+                query = query.Where(r => r.Status == status);
+            }
+
+            // Grouped by item (by name, then id as a tiebreaker for same-named
+            // items), then by position within that item's queue - not by
+            // PlacedDate or QueuePosition alone, either of which would interleave
+            // unrelated items' queues with each other. Positions only mean
+            // something within a single item's queue.
+            var reservations = await query
+                .OrderBy(r => r.Item!.Name)
+                .ThenBy(r => r.ItemId)
+                .ThenBy(r => r.QueuePosition)
+                .ToListAsync();
+
+            return reservations.Select(ToEntry).ToList();
+        }
+
+        private static ReservationQueueEntryViewModel ToEntry(Reservation r) => new()
+        {
+            Id = r.Id,
+            ItemId = r.ItemId,
+            ItemName = r.Item!.Name,
+            LibraryCode = r.Item.LibraryCode,
+            BorrowerName = $"{r.Borrower!.FirstName} {r.Borrower.LastName}",
+            QueuePosition = r.QueuePosition,
+            Status = r.Status,
+            PlacedDate = r.PlacedDate,
+            ExpiryDate = r.ExpiryDate
+        };
 
         /// <inheritdoc />
         public async Task<int> GetWaitingCountAsync(int itemId)
@@ -161,6 +236,14 @@ namespace LibrarySystem.Services
 
             await context.SaveChangesAsync();
 
+            // Promotion doesn't remove anyone from the active set (Waiting and
+            // Ready are both active), so this shouldn't change any positions -
+            // but it's cheap, and calling it on every path that touches the
+            // active set is what keeps positions self-correcting rather than
+            // only "usually correct".
+            await RenumberQueueAsync(itemId);
+            await context.SaveChangesAsync();
+
             await TryQueueNotificationAsync(next.BorrowerId, NotificationType.ReservationReady, new Dictionary<string, string>
             {
                 ["ItemName"] = item.Name,
@@ -188,8 +271,15 @@ namespace LibrarySystem.Services
 
             await context.SaveChangesAsync();
 
+            var affectedItemIds = stale.Select(r => r.ItemId).Distinct().ToList();
+            foreach (var itemId in affectedItemIds)
+            {
+                await RenumberQueueAsync(itemId);
+            }
+            await context.SaveChangesAsync();
+
             var promotedCount = 0;
-            foreach (var itemId in stale.Select(r => r.ItemId).Distinct())
+            foreach (var itemId in affectedItemIds)
             {
                 if (await PromoteNextAsync(itemId))
                 {

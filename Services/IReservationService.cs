@@ -1,4 +1,6 @@
 using LibrarySystem.Models;
+using LibrarySystem.Models.Enums;
+using LibrarySystem.Models.ViewModels;
 
 namespace LibrarySystem.Services
 {
@@ -11,8 +13,8 @@ namespace LibrarySystem.Services
         /// rather than reserved, and a Destroyed item can't be reserved at all.
         /// Fails if the borrower already has an active (Waiting or Ready)
         /// reservation for this item - one active reservation per borrower per
-        /// item. QueuePosition is assigned as (active reservations already on this
-        /// item) + 1, so new reservations always join at the back of the queue.
+        /// item. QueuePosition is derived from the queue's actual state after
+        /// placing, same as every other path that changes who's active on this item.
         /// </summary>
         Task<ReservationResult> PlaceAsync(int itemId, int borrowerId);
 
@@ -24,8 +26,22 @@ namespace LibrarySystem.Services
         /// </summary>
         Task<ReservationResult> CancelAsync(int reservationId);
 
+        /// <summary>
+        /// Marks a Ready reservation Collected - called by LoanService once the
+        /// borrow it was holding the item for has gone through - and re-derives
+        /// queue positions for the rest of that item's active queue. Fails if the
+        /// reservation isn't currently Ready.
+        /// </summary>
+        Task<ReservationResult> MarkCollectedAsync(int reservationId);
+
         /// <summary>The active (Waiting or Ready) reservations for an item, in queue order.</summary>
-        Task<List<Reservation>> GetQueueAsync(int itemId);
+        Task<List<ReservationQueueEntryViewModel>> GetQueueAsync(int itemId);
+
+        /// <summary>
+        /// Every active (Waiting or Ready) reservation across all items, newest
+        /// first by PlacedDate, optionally narrowed to just one of those two statuses.
+        /// </summary>
+        Task<List<ReservationQueueEntryViewModel>> GetActiveReservationsAsync(ReservationStatus? statusFilter);
 
         /// <summary>How many borrowers are currently Waiting (not yet Ready) for an item.</summary>
         Task<int> GetWaitingCountAsync(int itemId);
@@ -34,9 +50,9 @@ namespace LibrarySystem.Services
         /// The current Ready reservation for an item, if any - at most one exists
         /// at a time, since a reservation only becomes Ready once the previous
         /// Ready one has left that state (Collected, Expired or Cancelled).
-        /// Returned tracked, not no-tracking: BorrowAsync uses this to decide
-        /// whether to hold the item, and mutates the result directly so it saves
-        /// in the same unit of work as the loan it creates.
+        /// BorrowAsync uses this to decide whether to hold the item; once the
+        /// loan goes through, it calls MarkCollectedAsync with this reservation's
+        /// Id rather than mutating it directly.
         /// </summary>
         Task<Reservation?> GetReadyReservationAsync(int itemId);
 
