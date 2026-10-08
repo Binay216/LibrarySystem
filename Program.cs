@@ -1,6 +1,8 @@
 using LibrarySystem.Data;
+using LibrarySystem.Models.Dto;
 using LibrarySystem.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -16,6 +18,43 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.Requ
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddControllersWithViews();
+
+// No existing controller has [ApiController] - only the new api/v1
+// controllers (Controllers/Api) do - so this only changes behavior for
+// those: a model-binding failure (e.g. an unparseable query param) gets the
+// same {statusCode, message} shape as every other api/v1 error, instead of
+// the default ProblemDetails response [ApiController] would otherwise produce.
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        // ModelState's own ErrorMessage text for a binding failure (e.g. an
+        // enum that doesn't parse) often doesn't name the field at all - just
+        // "The value 'X' is not valid." - so the field name (the ModelState
+        // key) is prepended explicitly rather than trusting the message text
+        // to already include it. Every invalid field is listed, not just the
+        // first - a request can fail to bind more than one parameter at once
+        // (e.g. ?type=Bad&page=abc), and the caller needs to see all of them
+        // in one response rather than fixing them one at a time.
+        var fieldMessages = context.ModelState
+            .Where(kvp => kvp.Value?.Errors.Count > 0)
+            .Select(kvp =>
+            {
+                var errorText = kvp.Value!.Errors
+                    .Select(e => e.ErrorMessage)
+                    .FirstOrDefault(m => !string.IsNullOrWhiteSpace(m))
+                    ?? "The value provided is invalid.";
+                return $"{kvp.Key}: {errorText}";
+            })
+            .ToList();
+
+        var message = fieldMessages.Count > 0
+            ? string.Join(" | ", fieldMessages)
+            : "The request was invalid.";
+
+        return new BadRequestObjectResult(new ApiErrorDto(StatusCodes.Status400BadRequest, message));
+    };
+});
 
 builder.Services.Configure<FinePolicyOptions>(builder.Configuration.GetSection(FinePolicyOptions.SectionName));
 builder.Services.Configure<LibraryClockOptions>(builder.Configuration.GetSection(LibraryClockOptions.SectionName));
@@ -75,6 +114,12 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
+
+// Attribute-routed API controllers (Controllers/Api) - explicit alongside the
+// conventional MVC route above for clarity, now that the app has a formal
+// api/v1 surface. Safe to have both: the framework dedupes by action, not by
+// call site, so this doesn't double-register the conventional routes.
+app.MapControllers();
 
 app.MapRazorPages()
    .WithStaticAssets();
