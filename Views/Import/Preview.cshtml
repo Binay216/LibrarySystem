@@ -1,0 +1,112 @@
+@model ImportPreviewPageViewModel
+@{
+    ViewData["Title"] = "Import Preview";
+}
+
+<h1>Import Preview</h1>
+<p class="text-muted">Nothing has been saved yet. Review the rows below, then confirm to create the checked items.</p>
+
+<h2 class="h4">Valid Rows (@Model.ValidRows.Count)</h2>
+@if (Model.ValidRows.Count == 0)
+{
+    <div class="empty-state">
+        <i class="bi bi-inbox" aria-hidden="true"></i>
+        <p class="mb-0">No valid rows to import.</p>
+    </div>
+}
+else
+{
+    <form asp-action="Confirm" method="post">
+        <input type="hidden" name="rawCsv" value="@Model.RawCsv" />
+
+        <div class="table-responsive mb-3">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Row</th>
+                        <th>Type</th>
+                        <th>Name</th>
+                        <th>Library Code</th>
+                        <th>Home Branch</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Model.ValidRows)
+                    {
+                        <tr>
+                            <td><input type="checkbox" class="form-check-input" name="selectedRows" value="@row.RowNumber" checked /></td>
+                            <td>@row.RowNumber</td>
+                            <td>@row.Type</td>
+                            <td>@row.Name</td>
+                            <td>@row.LibraryCode</td>
+                            <td>@row.HomeBranchCode</td>
+                            <td>
+                                @switch (row.Type.Trim().ToUpperInvariant())
+                                {
+                                    case "BOOK":
+                                        @($"Author: {row.Author}, Genre: {row.Genre}")
+                                        break;
+                                    case "MUSIC":
+                                        @($"Artist: {row.Artist}, Year: {row.Year}")
+                                        break;
+                                    case "TOY":
+                                        @($"ToyType: {row.ToyType}, Recommended Age: {row.RecommendedAge}")
+                                        break;
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1" aria-hidden="true"></i>Confirm Import</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+    </form>
+}
+
+<h2 class="h4 mt-5">Invalid Rows (@Model.InvalidRows.Count)</h2>
+@if (Model.InvalidRows.Count == 0)
+{
+    <div class="empty-state empty-state-positive">
+        <i class="bi bi-check-circle" aria-hidden="true"></i>
+        <p class="mb-0">No invalid rows.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Row</th>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>Library Code</th>
+                    <th>Reason</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.InvalidRows)
+                {
+                    <tr>
+                        <td>@row.RowNumber</td>
+                        <td>@row.Type</td>
+                        <td>@row.Name</td>
+                        <td>@row.LibraryCode</td>
+                        <td>
+                            <ul class="mb-0 ps-3">
+                                @foreach (var error in row.Errors)
+                                {
+                                    <li class="text-danger">@error</li>
+                                }
+                            </ul>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

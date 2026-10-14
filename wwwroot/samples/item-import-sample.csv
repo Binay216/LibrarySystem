@@ -1,0 +1,9 @@
+Type,Name,Description,LibraryCode,HomeBranchCode,Author,Genre,Artist,Year,ToyType,RecommendedAge
+Book,"The Wind in the Willows","A gentle tale of friendship, river life and home.",IMP-BK-001,CAS,Kenneth Grahame,Children's Classic,,,,
+Music,Blue,An intimate folk-rock album about love and loss.,IMP-MU-001,PAL,,,Joni Mitchell,1971,,
+Toy,Wooden Train Set,"A 40-piece wooden train set, compatible with major brands.",IMP-TY-001,DRW,,,,,Construction,4
+Book,Charlotte's Web,A pig and a spider form an unlikely friendship.,IMP-BK-002,PAL,E.B. White,Children's Classic,,,,
+Book,Mystery At The Lighthouse,A seaside whodunit for young readers.,IMP-BK-003,ZZZ,R. Sample,Mystery,,,,
+Music,Greatest Hits,A career-spanning compilation.,IMP-MU-002,CAS,,,Sample Artist,not-a-year,,
+Music,Rumours Live,A live recording from the Rumours tour.,IMP-MU-003,DRW,,,Fleetwood Mac,1977,,
+Toy,Building Bricks Set,A 200-piece classic brick building set.,IMP-TY-002,CAS,,,,,Construction,5

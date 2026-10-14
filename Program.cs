@@ -78,6 +78,7 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<INotificationSweepService, NotificationSweepService>();
 builder.Services.AddScoped<IReservationService, ReservationService>();
 builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IImportService, ImportService>();
 
 // Swagger - services are always registered (cheap, harmless), but the UI
 // middleware is only mapped in Development, below. "Try it out" needs the
