@@ -6,7 +6,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
+using QuestPDF.Fluent;
+using QuestPDF.Infrastructure;
 using System.Reflection;
+
+// QuestPDF requires an explicit licence declaration before any document is
+// generated. Community is free for this project (a non-commercial student
+// app under QuestPDF's revenue/team-size thresholds).
+QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
 
