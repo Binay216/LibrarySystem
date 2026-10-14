@@ -1,0 +1,132 @@
+@model ReportPageViewModel<FineRevenueReportViewModel>
+@{
+    ViewData["Title"] = "Fine Revenue Report";
+}
+
+<h1>Fine Revenue Report</h1>
+
+<form asp-action="FineRevenue" method="get" class="row g-2 mb-3 align-items-end">
+    <div class="col-6 col-md-3">
+        <label for="startDate" class="form-label mb-0">From</label>
+        <input type="date" id="startDate" name="startDate" class="form-control" value="@Model.Report.Filters.StartDate.ToString("yyyy-MM-dd")" />
+    </div>
+    <div class="col-6 col-md-3">
+        <label for="endDate" class="form-label mb-0">To</label>
+        <input type="date" id="endDate" name="endDate" class="form-control" value="@Model.Report.Filters.EndDate.ToString("yyyy-MM-dd")" />
+    </div>
+    <div class="col-6 col-md-3">
+        <label for="branchId" class="form-label mb-0">Branch</label>
+        <select name="branchId" id="branchId" class="form-select">
+            <option value="">All Branches</option>
+            @foreach (var branch in Model.Branches)
+            {
+                <option value="@branch.Value" selected="@(Model.SelectedBranchId.HasValue && Model.SelectedBranchId.Value.ToString() == branch.Value)">@branch.Text</option>
+            }
+        </select>
+    </div>
+    <div class="col-6 col-md-3">
+        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel me-1" aria-hidden="true"></i>Apply</button>
+    </div>
+</form>
+
+<div class="d-flex gap-2 mb-4">
+    <a asp-action="FineRevenueCsv"
+       asp-route-startDate="@Model.Report.Filters.StartDate.ToString("yyyy-MM-dd")"
+       asp-route-endDate="@Model.Report.Filters.EndDate.ToString("yyyy-MM-dd")"
+       asp-route-branchId="@Model.SelectedBranchId"
+       class="btn btn-outline-secondary"><i class="bi bi-filetype-csv me-1" aria-hidden="true"></i>Download CSV</a>
+    <a asp-action="FineRevenuePdf"
+       asp-route-startDate="@Model.Report.Filters.StartDate.ToString("yyyy-MM-dd")"
+       asp-route-endDate="@Model.Report.Filters.EndDate.ToString("yyyy-MM-dd")"
+       asp-route-branchId="@Model.SelectedBranchId"
+       class="btn btn-outline-secondary"><i class="bi bi-filetype-pdf me-1" aria-hidden="true"></i>Download PDF</a>
+</div>
+
+<p class="text-muted">Branch: @Model.Report.Filters.BranchName &middot; Period: @Model.Report.Filters.StartDate.ToString("d") - @Model.Report.Filters.EndDate.ToString("d")</p>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="text-muted small">Total Accrued</div>
+                <div class="fs-2">@Model.Report.TotalAccrued.ToString("C")</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 border-start border-success border-4">
+            <div class="card-body">
+                <div class="text-muted small">Total Paid</div>
+                <div class="fs-2">@Model.Report.TotalPaid.ToString("C")</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 border-start border-warning border-4">
+            <div class="card-body">
+                <div class="text-muted small">Total Outstanding</div>
+                <div class="fs-2">@Model.Report.TotalOutstanding.ToString("C")</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h2 class="h4">Fines By Borrower</h2>
+@if (Model.Report.ByBorrower.Count == 0)
+{
+    <div class="empty-state">
+        <i class="bi bi-inbox" aria-hidden="true"></i>
+        <p class="mb-0">No data for this period.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive mb-4">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr><th>Borrower Name</th><th>Accrued</th><th>Paid</th><th>Outstanding</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var b in Model.Report.ByBorrower)
+                {
+                    <tr>
+                        <td>@b.BorrowerName</td>
+                        <td>@b.Accrued.ToString("C")</td>
+                        <td>@b.Paid.ToString("C")</td>
+                        <td>@b.Outstanding.ToString("C")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<h2 class="h4">Fines By Period</h2>
+@if (Model.Report.ByPeriod.Count == 0)
+{
+    <div class="empty-state">
+        <i class="bi bi-inbox" aria-hidden="true"></i>
+        <p class="mb-0">No data for this period.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr><th>Period</th><th>Accrued</th><th>Paid</th><th>Outstanding</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model.Report.ByPeriod)
+                {
+                    <tr>
+                        <td>@p.Period</td>
+                        <td>@p.Accrued.ToString("C")</td>
+                        <td>@p.Paid.ToString("C")</td>
+                        <td>@p.Outstanding.ToString("C")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

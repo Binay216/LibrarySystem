@@ -1,0 +1,223 @@
+@model ReportPageViewModel<InventoryHealthReportViewModel>
+@{
+    ViewData["Title"] = "Inventory Health Report";
+}
+
+<h1>Inventory Health Report</h1>
+
+<form asp-action="InventoryHealth" method="get" class="row g-2 mb-3 align-items-end">
+    <div class="col-6 col-md-3">
+        <label for="startDate" class="form-label mb-0">From</label>
+        <input type="date" id="startDate" name="startDate" class="form-control" value="@Model.Report.Filters.StartDate.ToString("yyyy-MM-dd")" />
+    </div>
+    <div class="col-6 col-md-3">
+        <label for="endDate" class="form-label mb-0">To</label>
+        <input type="date" id="endDate" name="endDate" class="form-control" value="@Model.Report.Filters.EndDate.ToString("yyyy-MM-dd")" />
+    </div>
+    <div class="col-6 col-md-3">
+        <label for="branchId" class="form-label mb-0">Branch</label>
+        <select name="branchId" id="branchId" class="form-select">
+            <option value="">All Branches</option>
+            @foreach (var branch in Model.Branches)
+            {
+                <option value="@branch.Value" selected="@(Model.SelectedBranchId.HasValue && Model.SelectedBranchId.Value.ToString() == branch.Value)">@branch.Text</option>
+            }
+        </select>
+    </div>
+    <div class="col-6 col-md-3">
+        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel me-1" aria-hidden="true"></i>Apply</button>
+    </div>
+</form>
+
+<div class="d-flex gap-2 mb-4">
+    <a asp-action="InventoryHealthCsv"
+       asp-route-startDate="@Model.Report.Filters.StartDate.ToString("yyyy-MM-dd")"
+       asp-route-endDate="@Model.Report.Filters.EndDate.ToString("yyyy-MM-dd")"
+       asp-route-branchId="@Model.SelectedBranchId"
+       class="btn btn-outline-secondary"><i class="bi bi-filetype-csv me-1" aria-hidden="true"></i>Download CSV</a>
+    <a asp-action="InventoryHealthPdf"
+       asp-route-startDate="@Model.Report.Filters.StartDate.ToString("yyyy-MM-dd")"
+       asp-route-endDate="@Model.Report.Filters.EndDate.ToString("yyyy-MM-dd")"
+       asp-route-branchId="@Model.SelectedBranchId"
+       class="btn btn-outline-secondary"><i class="bi bi-filetype-pdf me-1" aria-hidden="true"></i>Download PDF</a>
+</div>
+
+<p class="text-muted">Branch: @Model.Report.Filters.BranchName &middot; Period: @Model.Report.Filters.StartDate.ToString("d") - @Model.Report.Filters.EndDate.ToString("d")</p>
+
+<h2 class="h4">Counts By Status</h2>
+@if (Model.Report.CountsByStatus.Count == 0)
+{
+    <div class="empty-state">
+        <i class="bi bi-inbox" aria-hidden="true"></i>
+        <p class="mb-0">No data for this period.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive mb-4">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr><th>Status</th><th>Count</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Model.Report.CountsByStatus)
+                {
+                    <tr>
+                        <td><partial name="_StatusBadge" model="s.Status" /></td>
+                        <td>@s.Count</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<h2 class="h4">Breakdown By Type</h2>
+@if (Model.Report.BreakdownByType.Count == 0)
+{
+    <div class="empty-state">
+        <i class="bi bi-inbox" aria-hidden="true"></i>
+        <p class="mb-0">No data for this period.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive mb-4">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr><th>Type</th><th>Available</th><th>Borrowed</th><th>Damaged</th><th>Destroyed</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var t in Model.Report.BreakdownByType)
+                {
+                    <tr>
+                        <td>@t.TypeLabel</td>
+                        <td>@t.Available</td>
+                        <td>@t.Borrowed</td>
+                        <td>@t.Damaged</td>
+                        <td>@t.Destroyed</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<h2 class="h4">Breakdown By Branch</h2>
+@if (Model.Report.BreakdownByBranch.Count == 0)
+{
+    <div class="empty-state">
+        <i class="bi bi-inbox" aria-hidden="true"></i>
+        <p class="mb-0">No data for this period.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive mb-4">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr><th>Branch</th><th>Available</th><th>Borrowed</th><th>Damaged</th><th>Destroyed</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var b in Model.Report.BreakdownByBranch)
+                {
+                    <tr>
+                        <td>@b.BranchName</td>
+                        <td>@b.Available</td>
+                        <td>@b.Borrowed</td>
+                        <td>@b.Damaged</td>
+                        <td>@b.Destroyed</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<h2 class="h4">Items Away From Home Branch (@Model.Report.AwayFromHomeCount)</h2>
+@if (Model.Report.AwayFromHomeItems.Count == 0)
+{
+    <div class="empty-state">
+        <i class="bi bi-inbox" aria-hidden="true"></i>
+        <p class="mb-0">No data for this period.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive mb-4">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr><th>Item Name</th><th>Library Code</th><th>Home Branch</th><th>Current Branch</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var i in Model.Report.AwayFromHomeItems)
+                {
+                    <tr>
+                        <td>@i.ItemName</td>
+                        <td>@i.LibraryCode</td>
+                        <td>@i.HomeBranchName</td>
+                        <td>@i.CurrentBranchName</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<h2 class="h4">Damaged Items</h2>
+@if (Model.Report.DamagedItems.Count == 0)
+{
+    <div class="empty-state">
+        <i class="bi bi-inbox" aria-hidden="true"></i>
+        <p class="mb-0">No data for this period.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive mb-4">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr><th>Item Name</th><th>Library Code</th><th>Current Branch</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var i in Model.Report.DamagedItems)
+                {
+                    <tr>
+                        <td>@i.ItemName</td>
+                        <td>@i.LibraryCode</td>
+                        <td>@i.CurrentBranchName</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<h2 class="h4">Destroyed Items</h2>
+@if (Model.Report.DestroyedItems.Count == 0)
+{
+    <div class="empty-state">
+        <i class="bi bi-inbox" aria-hidden="true"></i>
+        <p class="mb-0">No data for this period.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr><th>Item Name</th><th>Library Code</th><th>Current Branch</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var i in Model.Report.DestroyedItems)
+                {
+                    <tr>
+                        <td>@i.ItemName</td>
+                        <td>@i.LibraryCode</td>
+                        <td>@i.CurrentBranchName</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

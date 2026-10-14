@@ -58,6 +58,12 @@
     </div>
 </div>
 
+<div class="d-flex gap-2 flex-wrap mb-3">
+    <a asp-controller="Reports" asp-action="Borrowing" class="btn btn-outline-secondary"><i class="bi bi-journal-text me-1" aria-hidden="true"></i>Borrowing Report</a>
+    <a asp-controller="Reports" asp-action="FineRevenue" class="btn btn-outline-secondary"><i class="bi bi-cash-coin me-1" aria-hidden="true"></i>Fine Revenue Report</a>
+    <a asp-controller="Reports" asp-action="InventoryHealth" class="btn btn-outline-secondary"><i class="bi bi-box-seam me-1" aria-hidden="true"></i>Inventory Health Report</a>
+</div>
+
 @if (TempData["StatusMessage"] is string statusMessage)
 {
     <div class="alert alert-success">@statusMessage</div>
