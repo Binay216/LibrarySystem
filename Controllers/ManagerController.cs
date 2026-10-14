@@ -52,7 +52,7 @@ namespace LibrarySystem.Controllers
             var expiryResult = await reservationService.ExpireStaleAsync();
 
             TempData["StatusMessage"] =
-                $"Notification sweep complete: {notificationResult.DueSoonQueued} due-soon and {notificationResult.OverdueQueued} overdue notification(s) queued, " +
+                $"Notification sweep complete: {notificationResult.DueSoonQueued} due-soon and {notificationResult.OverdueQueued} overdue notification(s) sent, " +
                 $"{notificationResult.SkippedAlreadyNotified} already notified today, {notificationResult.Failed} failed. " +
                 $"Reservations: {expiryResult.ExpiredCount} expired, {expiryResult.PromotedCount} promoted to the next person in queue.";
             return RedirectToAction(nameof(Index), new { branchId });

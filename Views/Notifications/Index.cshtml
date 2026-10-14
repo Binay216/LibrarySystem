@@ -87,10 +87,10 @@ else
                             @notification.Channel
                         </td>
                         <td><partial name="_NotificationTypeBadge" model="@notification.Type" /></td>
-                        <td>@notification.Recipient</td>
-                        <td>@(string.IsNullOrEmpty(notification.Subject) ? "—" : notification.Subject)</td>
+                        <td class="text-truncate" style="max-width: 200px;" title="@notification.Recipient">@notification.Recipient</td>
+                        <td class="text-truncate" style="max-width: 240px;" title="@notification.Subject">@(string.IsNullOrEmpty(notification.Subject) ? "—" : notification.Subject)</td>
                         <td><partial name="_NotificationStatusBadge" model="@notification.Status" /></td>
-                        <td class="text-end">
+                        <td class="text-end" style="white-space: nowrap;">
                             <a asp-action="Details" asp-route-id="@notification.Id" class="btn btn-sm btn-outline-secondary">Details</a>
                         </td>
                     </tr>

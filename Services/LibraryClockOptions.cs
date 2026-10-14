@@ -9,7 +9,7 @@ namespace LibrarySystem.Services
     {
         public const string SectionName = "LibraryClock";
 
-        /// <summary>An IANA or Windows timezone id, e.g. "Australia/Adelaide".</summary>
+        /// <summary>An IANA or Windows timezone id, e.g. "Australia/Darwin".</summary>
         public string TimeZoneId { get; set; } = "UTC";
     }
 }
