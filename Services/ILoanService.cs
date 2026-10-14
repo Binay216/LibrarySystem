@@ -11,7 +11,7 @@ namespace LibrarySystem.Services
         /// borrower. The item must be physically at the branch this app instance is
         /// configured as (<see cref="ICurrentBranchAccessor"/>) - if it's at another
         /// branch, the failure message names which one. Records
-        /// <see cref="Loan.BorrowedAtBranchId"/> as the current branch.
+        /// <see cref="LibrarySystem.Models.Loan.BorrowedAtBranchId"/> as the current branch.
         /// </summary>
         Task<LoanResult> BorrowAsync(string libraryCode, int borrowerId);
 
@@ -22,8 +22,8 @@ namespace LibrarySystem.Services
         /// <see cref="BorrowAsync"/>, a return is accepted regardless of which branch
         /// the item is currently at - that's deliberate, a cross-branch return is
         /// legitimate and reconciled by a transfer rather than refused here. Records
-        /// <see cref="Loan.ReturnedAtBranchId"/> as the current branch, but leaves
-        /// <see cref="Item.CurrentBranchId"/> untouched. If the return happens away
+        /// <see cref="LibrarySystem.Models.Loan.ReturnedAtBranchId"/> as the current branch, but leaves
+        /// <see cref="LibrarySystem.Models.Item.CurrentBranchId"/> untouched. If the return happens away
         /// from the item's home branch, a Requested transfer back home is raised
         /// automatically (best-effort - see <see cref="ITransferService.RaiseTransferAsync"/>;
         /// if one is already active for this item, or the item wasn't returned

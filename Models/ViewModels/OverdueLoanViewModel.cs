@@ -19,7 +19,7 @@ namespace LibrarySystem.Models.ViewModels
 
         public int DaysOverdue { get; set; }
 
-        /// <summary>Late fee if returned today in undamaged condition - see <see cref="ILoanService.CalculateFine"/>.</summary>
+        /// <summary>Late fee if returned today in undamaged condition - see <see cref="LibrarySystem.Services.ILoanService.CalculateFine"/>.</summary>
         public decimal EstimatedFine { get; set; }
     }
 }

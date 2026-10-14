@@ -8,7 +8,10 @@ namespace LibrarySystem.Controllers.Api
     /// <summary>Public branch directory - active branches only.</summary>
     public class BranchesController(ApplicationDbContext context) : ApiControllerBase
     {
+        /// <summary>Lists every active branch (a deactivated branch is never returned), alphabetically by name.</summary>
+        /// <response code="200">The active branches.</response>
         [HttpGet]
+        [ProducesResponseType(typeof(List<BranchDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<List<BranchDto>>> Get()
         {
             var branches = await context.Branches

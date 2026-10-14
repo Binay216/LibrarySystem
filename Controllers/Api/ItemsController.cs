@@ -24,8 +24,21 @@ namespace LibrarySystem.Controllers.Api
         private const int DefaultPageSize = 20;
         private const int MaxPageSize = 100;
 
-        /// <summary>Paged, filterable catalogue search.</summary>
+        /// <summary>
+        /// Searches the public catalogue, paged. All filters are optional and
+        /// combine with AND; with none given, returns every item.
+        /// </summary>
+        /// <param name="search">Matched against item name and description (substring, case-insensitive).</param>
+        /// <param name="type">Restricts to one item type.</param>
+        /// <param name="branch">Restricts to items currently at this branch (internal branch id).</param>
+        /// <param name="availableOnly">When true, only items with Status = Available.</param>
+        /// <param name="page">1-based page number. Values below 1 are clamped to 1.</param>
+        /// <param name="pageSize">Results per page. Clamped to [1, 100]; defaults to 20.</param>
+        /// <response code="200">The matching page of items, with paging metadata.</response>
+        /// <response code="400">A query parameter didn't bind - e.g. an unrecognised type value, or a non-numeric page/pageSize.</response>
         [HttpGet]
+        [ProducesResponseType(typeof(PagedResultDto<ItemSummaryDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<PagedResultDto<ItemSummaryDto>>> Get(
             string? search,
             ItemTypeOption? type,
@@ -79,8 +92,13 @@ namespace LibrarySystem.Controllers.Api
             return Ok(new PagedResultDto<ItemSummaryDto>(results, totalCount, page, pageSize));
         }
 
-        /// <summary>One item, looked up by its library code.</summary>
+        /// <summary>Gets one item's full detail by its library code.</summary>
+        /// <param name="libraryCode">The item's library code, e.g. "BK-001".</param>
+        /// <response code="200">The item.</response>
+        /// <response code="404">No item has that library code.</response>
         [HttpGet("{libraryCode}")]
+        [ProducesResponseType(typeof(ItemDetailDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ItemDetailDto>> GetByLibraryCode(string libraryCode)
         {
             var item = await context.Items

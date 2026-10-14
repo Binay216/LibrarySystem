@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.OpenApi;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -69,6 +71,41 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<INotificationSweepService, NotificationSweepService>();
 builder.Services.AddScoped<IReservationService, ReservationService>();
 
+// Swagger - services are always registered (cheap, harmless), but the UI
+// middleware is only mapped in Development, below. "Try it out" needs the
+// X-Api-Key header or every call just gets ApiKeyAuthFilterAttribute's 401,
+// so the security definition/requirement here adds an Authorize button to
+// the UI that attaches the header to every request once filled in.
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Library System API",
+        Version = "v1",
+        Description = "Public, read-only catalogue API. Every endpoint requires an X-Api-Key header - click Authorize above and paste in the dev key from appsettings.json (ApiKey:Key)."
+    });
+
+    var xmlFile = Path.Combine(AppContext.BaseDirectory, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml");
+    if (File.Exists(xmlFile))
+    {
+        options.IncludeXmlComments(xmlFile);
+    }
+
+    options.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
+    {
+        Name = "X-Api-Key",
+        Type = SecuritySchemeType.ApiKey,
+        In = ParameterLocation.Header,
+        Description = "API key for the api/v1 endpoints (see ApiKey:Key in appsettings.json)."
+    });
+
+    options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        { new OpenApiSecuritySchemeReference("ApiKey", document), new List<string>() }
+    });
+});
+
 var app = builder.Build();
 
 // Automatic setup: apply pending migrations (creating the database if needed)
@@ -96,6 +133,15 @@ using (var scope = app.Services.CreateScope())
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
+
+    // Swagger UI, Development only - at /swagger. Not exposed in production:
+    // this is a demo/student project's dev tool, not something meant to be
+    // publicly reachable once deployed.
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Library System API v1");
+    });
 }
 else
 {
