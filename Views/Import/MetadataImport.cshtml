@@ -1,0 +1,78 @@
+@model MetadataImportFormViewModel
+@{
+    ViewData["Title"] = "Import Record";
+}
+
+<h1>Import Record</h1>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <li>@error.ErrorMessage</li>
+            }
+        </ul>
+    </div>
+}
+
+<div class="card mb-4" style="max-width: 640px;">
+    <div class="card-body">
+        <h2 class="h5">@Model.Record.Title</h2>
+        <p class="text-muted mb-2">@Model.Record.Type</p>
+        <p>@Model.Record.Description</p>
+        <dl class="row mb-0">
+            @switch (Model.Record.Type)
+            {
+                case "Book":
+                    <dt class="col-sm-4">Author</dt>
+                    <dd class="col-sm-8">@Model.Record.Author</dd>
+                    <dt class="col-sm-4">Genre</dt>
+                    <dd class="col-sm-8">@Model.Record.Genre</dd>
+                    <dt class="col-sm-4">ISBN</dt>
+                    <dd class="col-sm-8">@Model.Record.Isbn</dd>
+                    break;
+                case "Music":
+                    <dt class="col-sm-4">Artist</dt>
+                    <dd class="col-sm-8">@Model.Record.Artist</dd>
+                    <dt class="col-sm-4">Year</dt>
+                    <dd class="col-sm-8">@Model.Record.Year</dd>
+                    break;
+                case "Toy":
+                    <dt class="col-sm-4">Toy Type</dt>
+                    <dd class="col-sm-8">@Model.Record.ToyType</dd>
+                    <dt class="col-sm-4">Recommended Age</dt>
+                    <dd class="col-sm-8">@Model.Record.RecommendedAge</dd>
+                    break;
+            }
+        </dl>
+    </div>
+</div>
+
+<div class="card" style="max-width: 640px;">
+    <div class="card-body">
+        <form asp-action="MetadataImport" method="post">
+            <input type="hidden" name="externalId" value="@Model.Record.ExternalId" />
+
+            <div class="mb-3">
+                <label for="libraryCode" class="form-label">Library Code</label>
+                <input type="text" id="libraryCode" name="libraryCode" class="form-control" value="@Model.LibraryCode" required />
+            </div>
+
+            <div class="mb-3">
+                <label for="homeBranchId" class="form-label">Home Branch</label>
+                <select name="homeBranchId" id="homeBranchId" class="form-select" required>
+                    <option value="">Choose a branch...</option>
+                    @foreach (var branch in Model.Branches)
+                    {
+                        <option value="@branch.Value" selected="@(Model.HomeBranchId.HasValue && Model.HomeBranchId.Value.ToString() == branch.Value)">@branch.Text</option>
+                    }
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1" aria-hidden="true"></i>Import</button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+        </form>
+    </div>
+</div>

@@ -15,5 +15,12 @@ namespace LibrarySystem.Services
         /// single transaction.
         /// </summary>
         Task<ImportCommitResult> CommitAsync(string csvText, IReadOnlySet<int> selectedRowNumbers);
+
+        /// <summary>
+        /// Imports one external metadata record, validated exactly like a CSV
+        /// row - library code not already taken, branch exists - the shared
+        /// rule the CSV and metadata import paths are both required to apply.
+        /// </summary>
+        Task<MetadataImportResult> ImportMetadataRecordAsync(MetadataRecord record, string libraryCode, int homeBranchId);
     }
 }

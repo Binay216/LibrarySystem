@@ -80,6 +80,13 @@ builder.Services.AddScoped<IReservationService, ReservationService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IImportService, ImportService>();
 
+// The point of the IMetadataProvider abstraction: ImportController and
+// ImportService depend only on the interface, never on MockMetadataProvider
+// directly, so a real external metadata source (an ISBN/catalogue lookup API,
+// say) can replace the mock by changing only this one registration line - no
+// controller, view or service code would need to change.
+builder.Services.AddScoped<IMetadataProvider, MockMetadataProvider>();
+
 // Swagger - services are always registered (cheap, harmless), but the UI
 // middleware is only mapped in Development, below. "Try it out" needs the
 // X-Api-Key header or every call just gets ApiKeyAuthFilterAttribute's 401,

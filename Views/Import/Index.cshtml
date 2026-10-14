@@ -1,9 +1,10 @@
+@model ImportIndexViewModel
 @{
     ViewData["Title"] = "Import Items";
 }
 
 <h1>Import Items</h1>
-<p class="text-muted">Upload a CSV to bulk-create items. Nothing is saved until you review the parsed rows and confirm.</p>
+<p class="text-muted">Bulk-upload from a CSV, or search an external metadata source and import one record at a time. Nothing is saved until you review and confirm.</p>
 
 @if (TempData["StatusMessage"] is string statusMessage)
 {
@@ -25,32 +26,112 @@
     </div>
 }
 
-<div class="card mb-4" style="max-width: 640px;">
-    <div class="card-body">
-        <form asp-action="Preview" method="post" enctype="multipart/form-data">
-            <div class="mb-3">
-                <label for="file" class="form-label">CSV file</label>
-                <input type="file" id="file" name="file" accept=".csv" class="form-control" required />
+<ul class="nav nav-tabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link @(Model.HasSearched ? "" : "active")" data-bs-toggle="tab" data-bs-target="#csv-pane" type="button" role="tab">CSV Upload</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link @(Model.HasSearched ? "active" : "")" data-bs-toggle="tab" data-bs-target="#metadata-pane" type="button" role="tab">Search Metadata</button>
+    </li>
+</ul>
+
+<div class="tab-content pt-4">
+    <div class="tab-pane fade @(Model.HasSearched ? "" : "show active")" id="csv-pane" role="tabpanel">
+        <div class="card mb-4" style="max-width: 640px;">
+            <div class="card-body">
+                <form asp-action="Preview" method="post" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="file" class="form-label">CSV file</label>
+                        <input type="file" id="file" name="file" accept=".csv" class="form-control" required />
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-1" aria-hidden="true"></i>Upload &amp; Preview</button>
+                </form>
             </div>
-            <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-1" aria-hidden="true"></i>Upload &amp; Preview</button>
-        </form>
+        </div>
+
+        <p>
+            <a href="~/samples/item-import-sample.csv" download class="btn btn-outline-secondary">
+                <i class="bi bi-filetype-csv me-1" aria-hidden="true"></i>Download Sample CSV
+            </a>
+        </p>
+
+        <div class="card" style="max-width: 640px;">
+            <div class="card-body">
+                <h2 class="h5">Columns</h2>
+                <p class="mb-2"><code>Type, Name, Description, LibraryCode, HomeBranchCode</code>, plus whichever of these match the row's Type:</p>
+                <ul class="mb-0">
+                    <li><strong>Book</strong>: Author, Genre</li>
+                    <li><strong>Music</strong>: Artist, Year</li>
+                    <li><strong>Toy</strong>: ToyType, RecommendedAge</li>
+                </ul>
+            </div>
+        </div>
     </div>
-</div>
 
-<p>
-    <a href="~/samples/item-import-sample.csv" download class="btn btn-outline-secondary">
-        <i class="bi bi-filetype-csv me-1" aria-hidden="true"></i>Download Sample CSV
-    </a>
-</p>
+    <div class="tab-pane fade @(Model.HasSearched ? "show active" : "")" id="metadata-pane" role="tabpanel">
+        <form asp-action="Index" method="get" class="row g-2 mb-4 align-items-end" style="max-width: 640px;">
+            <div class="col-9">
+                <label for="metadataQuery" class="form-label">Search by title or ISBN</label>
+                <input type="text" id="metadataQuery" name="metadataQuery" class="form-control" value="@Model.MetadataQuery" placeholder="e.g. Nirvana, or 9780061120084" />
+            </div>
+            <div class="col-3">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1" aria-hidden="true"></i>Search</button>
+            </div>
+        </form>
 
-<div class="card" style="max-width: 640px;">
-    <div class="card-body">
-        <h2 class="h5">Columns</h2>
-        <p class="mb-2"><code>Type, Name, Description, LibraryCode, HomeBranchCode</code>, plus whichever of these match the row's Type:</p>
-        <ul class="mb-0">
-            <li><strong>Book</strong>: Author, Genre</li>
-            <li><strong>Music</strong>: Artist, Year</li>
-            <li><strong>Toy</strong>: ToyType, RecommendedAge</li>
-        </ul>
+        @if (Model.HasSearched)
+        {
+            <h2 class="h5">Results (@Model.MetadataResults.Count)</h2>
+            @if (Model.MetadataResults.Count == 0)
+            {
+                <div class="empty-state">
+                    <i class="bi bi-inbox" aria-hidden="true"></i>
+                    <p class="mb-0">No matching records.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Title</th>
+                                <th>Details</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var record in Model.MetadataResults)
+                            {
+                                <tr>
+                                    <td>@record.Type</td>
+                                    <td>@record.Title</td>
+                                    <td>
+                                        @switch (record.Type)
+                                        {
+                                            case "Book":
+                                                @($"{record.Author} - {record.Genre} (ISBN {record.Isbn})")
+                                                break;
+                                            case "Music":
+                                                @($"{record.Artist} ({record.Year})")
+                                                break;
+                                            case "Toy":
+                                                @($"{record.ToyType}, Recommended Age {record.RecommendedAge}")
+                                                break;
+                                        }
+                                    </td>
+                                    <td>
+                                        <a asp-action="MetadataImport" asp-route-externalId="@record.ExternalId" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>Import
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        }
     </div>
 </div>

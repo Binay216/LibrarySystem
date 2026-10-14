@@ -69,6 +69,55 @@ namespace LibrarySystem.Services
             return new ImportCommitResult { Created = toImport.Count, Skipped = skipped.Count, Rejected = rejected.Count };
         }
 
+        public async Task<MetadataImportResult> ImportMetadataRecordAsync(MetadataRecord record, string libraryCode, int homeBranchId)
+        {
+            var code = libraryCode.Trim();
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                return new MetadataImportResult { Success = false, ErrorMessage = "LibraryCode is required." };
+            }
+
+            var codeTaken = await context.Items.AsNoTracking().AnyAsync(i => i.LibraryCode == code);
+            if (codeTaken)
+            {
+                return new MetadataImportResult { Success = false, ErrorMessage = $"Library code '{code}' is already in use." };
+            }
+
+            var branchExists = await context.Branches.AsNoTracking().AnyAsync(b => b.Id == homeBranchId);
+            if (!branchExists)
+            {
+                return new MetadataImportResult { Success = false, ErrorMessage = "Unknown branch." };
+            }
+
+            Item item = record.Type.Trim().ToUpperInvariant() switch
+            {
+                "BOOK" => new Book { Author = record.Author.Trim(), Genre = record.Genre.Trim() },
+                "MUSIC" => new Music { Artist = record.Artist.Trim(), Year = record.Year ?? 0 },
+                "TOY" => new Toy { ToyType = record.ToyType.Trim(), RecommendedAge = record.RecommendedAge ?? 0 },
+                _ => throw new InvalidOperationException($"Unknown item type '{record.Type}'.")
+            };
+
+            item.Name = record.Title.Trim();
+            item.Description = record.Description.Trim();
+            item.LibraryCode = code;
+            item.Status = ItemStatus.Available;
+            item.HomeBranchId = homeBranchId;
+            item.CurrentBranchId = homeBranchId;
+
+            context.Items.Add(item);
+
+            try
+            {
+                await context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                return new MetadataImportResult { Success = false, ErrorMessage = $"Library code '{code}' is already in use." };
+            }
+
+            return new MetadataImportResult { Success = true };
+        }
+
         private async Task<(List<ImportRowPreview> Rows, string? FileError)> ParseAndValidateAsync(string csvText)
         {
             var records = CsvParser.Parse(csvText);
