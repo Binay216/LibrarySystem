@@ -1,0 +1,54 @@
+@model KioskKeypadViewModel
+
+<div class="kiosk-keypad" data-kiosk-keypad="@Model.TargetSelector">
+    @if (Model.Mode == KioskKeypadMode.Numeric)
+    {
+        <div class="kiosk-keypad-grid kiosk-keypad-numeric">
+            @foreach (var key in new[] { "1", "2", "3", "4", "5", "6", "7", "8", "9" })
+            {
+                <button type="button" class="kiosk-key" data-key="@key">@key</button>
+            }
+            <button type="button" class="kiosk-key kiosk-key-action" data-key="clear">Clear</button>
+            <button type="button" class="kiosk-key" data-key="0">0</button>
+            <button type="button" class="kiosk-key kiosk-key-action" data-key="backspace" aria-label="Backspace">
+                <i class="bi bi-backspace" aria-hidden="true"></i>
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="kiosk-keypad-grid kiosk-keypad-alpha">
+            <div class="kiosk-key-row">
+                @foreach (var key in "1234567890")
+                {
+                    <button type="button" class="kiosk-key" data-key="@key">@key</button>
+                }
+            </div>
+            <div class="kiosk-key-row">
+                @foreach (var key in "QWERTYUIOP")
+                {
+                    <button type="button" class="kiosk-key" data-key="@key">@key</button>
+                }
+            </div>
+            <div class="kiosk-key-row">
+                @foreach (var key in "ASDFGHJKL")
+                {
+                    <button type="button" class="kiosk-key" data-key="@key">@key</button>
+                }
+            </div>
+            <div class="kiosk-key-row">
+                @foreach (var key in "ZXCVBNM")
+                {
+                    <button type="button" class="kiosk-key" data-key="@key">@key</button>
+                }
+                <button type="button" class="kiosk-key kiosk-key-action" data-key="backspace" aria-label="Backspace">
+                    <i class="bi bi-backspace" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div class="kiosk-key-row">
+                <button type="button" class="kiosk-key kiosk-key-wide" data-key="space">Space</button>
+                <button type="button" class="kiosk-key kiosk-key-action kiosk-key-wide" data-key="clear">Clear</button>
+            </div>
+        </div>
+    }
+</div>

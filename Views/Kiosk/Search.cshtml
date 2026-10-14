@@ -1,0 +1,14 @@
+@{
+    ViewData["Title"] = "Search";
+    ViewData["KioskShowCancel"] = true;
+}
+
+<h1 class="kiosk-prompt">Search the Catalogue</h1>
+
+<input type="text" id="searchTerm" class="kiosk-display-input" readonly inputmode="none" aria-label="Search term" autocomplete="off" />
+
+<partial name="_KioskKeypad" model="@(new KioskKeypadViewModel { TargetSelector = "#searchTerm", Mode = KioskKeypadMode.Alphanumeric })" />
+
+<a asp-action="ComingSoon" asp-route-from="Search" class="btn kiosk-continue-btn">
+    Continue <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
+</a>

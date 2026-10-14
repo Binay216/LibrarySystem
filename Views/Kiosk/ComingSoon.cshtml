@@ -1,0 +1,12 @@
+@model string
+@{
+    ViewData["Title"] = "Coming Soon";
+}
+
+<i class="bi bi-hourglass-split kiosk-comingsoon-icon" aria-hidden="true"></i>
+<h1 class="kiosk-prompt">@Model is coming soon</h1>
+<p class="kiosk-comingsoon-text">This part of the kiosk isn't built yet. Please ask a staff member for help in the meantime.</p>
+
+<a asp-action="Index" class="btn kiosk-startover-btn">
+    <i class="bi bi-house-door me-2" aria-hidden="true"></i>Start Over
+</a>

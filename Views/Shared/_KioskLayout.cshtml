@@ -1,0 +1,35 @@
+@inject ICurrentBranchAccessor CurrentBranchAccessor
+@{
+    var branch = await CurrentBranchAccessor.GetCurrentBranchAsync();
+    var showCancel = ViewData["KioskShowCancel"] as bool? ?? false;
+    var suppressTimeout = ViewData["KioskSuppressTimeout"] as bool? ?? false;
+    var resetUrl = suppressTimeout ? "" : Url.Action("Index", "Kiosk");
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>@ViewData["Title"] - Library Kiosk</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/kiosk.css" asp-append-version="true" />
+</head>
+<body class="kiosk-body" data-kiosk-reset-url="@resetUrl" data-kiosk-reset-seconds="60">
+    <header class="kiosk-header">
+        <span class="kiosk-header-branch"><i class="bi bi-geo-alt-fill me-1" aria-hidden="true"></i>@branch.Name Kiosk</span>
+        @if (showCancel)
+        {
+            <a asp-controller="Kiosk" asp-action="Index" class="btn kiosk-cancel-btn">
+                <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Cancel / Start Over
+            </a>
+        }
+    </header>
+    <main class="kiosk-main">
+        @RenderBody()
+    </main>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/kiosk.js" asp-append-version="true"></script>
+</body>
+</html>

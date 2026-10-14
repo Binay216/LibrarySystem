@@ -1,0 +1,14 @@
+@{
+    ViewData["Title"] = "My Account";
+    ViewData["KioskShowCancel"] = true;
+}
+
+<h1 class="kiosk-prompt">Enter Your Card Number</h1>
+
+<input type="text" id="cardNumber" class="kiosk-display-input" readonly inputmode="none" aria-label="Card number" autocomplete="off" />
+
+<partial name="_KioskKeypad" model="@(new KioskKeypadViewModel { TargetSelector = "#cardNumber", Mode = KioskKeypadMode.Numeric })" />
+
+<a asp-action="ComingSoon" asp-route-from="My Account" class="btn kiosk-continue-btn">
+    Continue <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
+</a>

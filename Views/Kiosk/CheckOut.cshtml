@@ -1,0 +1,14 @@
+@{
+    ViewData["Title"] = "Check Out";
+    ViewData["KioskShowCancel"] = true;
+}
+
+<h1 class="kiosk-prompt">Enter the Library Code</h1>
+
+<input type="text" id="libraryCode" class="kiosk-display-input" readonly inputmode="none" aria-label="Library code" autocomplete="off" />
+
+<partial name="_KioskKeypad" model="@(new KioskKeypadViewModel { TargetSelector = "#libraryCode", Mode = KioskKeypadMode.Numeric })" />
+
+<a asp-action="ComingSoon" asp-route-from="Check Out" class="btn kiosk-continue-btn">
+    Continue <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
+</a>

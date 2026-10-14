@@ -1,0 +1,244 @@
+/*
+ * The kiosk shell: touch-first, high-contrast, designed for a fixed 1024x768
+ * landscape terminal - not a responsive page. Reuses the app's --accent
+ * variables from site.css (same burgundy identity) but none of its compact
+ * admin-UI sizing; every interactive element here is well over the 48px
+ * minimum touch target.
+ */
+
+html, body {
+  height: 100%;
+}
+
+.kiosk-body {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--accent-light);
+  font-size: 20px;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.kiosk-header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  background-color: var(--accent);
+  color: #fff;
+}
+
+.kiosk-header-branch {
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.kiosk-cancel-btn {
+  min-height: 56px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--accent);
+  background-color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+}
+
+.kiosk-cancel-btn:hover,
+.kiosk-cancel-btn:focus {
+  color: var(--accent);
+  background-color: #f1eef0;
+}
+
+.kiosk-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+/* Idle screen */
+.kiosk-idle-branch {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
+.kiosk-idle-subtitle {
+  font-size: 1.5rem;
+  color: var(--bs-secondary-color);
+  margin-bottom: 3rem;
+}
+
+.kiosk-action-grid {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.kiosk-action-tile {
+  width: 240px;
+  height: 240px;
+  min-height: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+  background-color: var(--accent);
+  border: none;
+  border-radius: 1.25rem;
+  box-shadow: 0 4px 10px rgba(var(--accent-rgb), 0.3);
+}
+
+.kiosk-action-tile:hover,
+.kiosk-action-tile:focus {
+  color: #fff;
+  background-color: var(--accent-dark);
+}
+
+.kiosk-action-tile .bi {
+  font-size: 4rem;
+}
+
+/* Input (keypad) screens */
+.kiosk-prompt {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 1.5rem;
+}
+
+.kiosk-display-input {
+  width: 100%;
+  max-width: 520px;
+  min-height: 64px;
+  font-size: 2rem;
+  letter-spacing: 0.15em;
+  text-align: center;
+  padding: 0.5rem 1rem;
+  margin-bottom: 2rem;
+  color: var(--accent-dark);
+  background-color: #fff;
+  border: 3px solid var(--accent);
+  border-radius: 0.75rem;
+}
+
+.kiosk-display-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 0.25rem rgba(var(--accent-rgb), 0.25);
+}
+
+.kiosk-keypad-grid {
+  display: grid;
+}
+
+.kiosk-keypad-numeric {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  max-width: 340px;
+}
+
+.kiosk-key {
+  min-height: 72px;
+  min-width: 72px;
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--accent);
+  background-color: #fff;
+  border: 2px solid var(--accent);
+  border-radius: 0.75rem;
+}
+
+.kiosk-key:active {
+  color: #fff;
+  background-color: var(--accent);
+}
+
+.kiosk-key-action {
+  background-color: var(--accent-light);
+}
+
+.kiosk-keypad-alpha .kiosk-key-row {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+  margin-bottom: 0.4rem;
+}
+
+.kiosk-keypad-alpha .kiosk-key {
+  flex: 1 1 60px;
+  max-width: 76px;
+  min-width: 56px;
+  min-height: 60px;
+  font-size: 1.25rem;
+}
+
+.kiosk-key-wide {
+  flex: 3 1 auto !important;
+  max-width: none !important;
+}
+
+.kiosk-continue-btn {
+  margin-top: 2rem;
+  min-height: 64px;
+  min-width: 220px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+  background-color: var(--accent);
+  border: none;
+  border-radius: 0.75rem;
+}
+
+.kiosk-continue-btn:hover,
+.kiosk-continue-btn:focus {
+  color: #fff;
+  background-color: var(--accent-dark);
+}
+
+/* Coming soon screen */
+.kiosk-comingsoon-icon {
+  font-size: 4rem;
+  color: var(--accent);
+  margin-bottom: 1rem;
+}
+
+.kiosk-comingsoon-text {
+  font-size: 1.4rem;
+  color: var(--bs-secondary-color);
+  max-width: 560px;
+  margin-bottom: 2.5rem;
+}
+
+.kiosk-startover-btn {
+  min-height: 80px;
+  min-width: 280px;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #fff;
+  background-color: var(--accent);
+  border: none;
+  border-radius: 1rem;
+}
+
+.kiosk-startover-btn:hover,
+.kiosk-startover-btn:focus {
+  color: #fff;
+  background-color: var(--accent-dark);
+}
