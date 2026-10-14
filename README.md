@@ -1,6 +1,38 @@
 # LibrarySystem
 
-A library management system built in ASP.NET Core MVC (.NET 10) — admin item CRUD, reception borrowing/returns/fines, manager statistics dashboards, and a public mobile-responsive catalog search.
+A library management system built in ASP.NET Core MVC (.NET 10), covering a full branch network rather than a single desk: item CRUD and bulk import, reception borrowing/returns/fines, cross-branch transfers, a reservation queue, due-date/overdue notifications, manager statistics and exportable reports, a public catalogue, a public read-only API, and a touchscreen self-service kiosk.
+
+## Quick start
+
+1. **Clone the repository.**
+2. Open `LibrarySystem.slnx` in Visual Studio.
+3. Press **F5**.
+
+That's it - no Package Manager Console, no manual `Update-Database`, no manual SQL. On first run the app creates the LocalDB database, applies every migration, and seeds:
+
+- 3 branches (Casuarina, Palmerston, Darwin City)
+- 3 role accounts (Admin, Reception, Manager - see the table below)
+- 5 borrowers, with a mix of loans including an overdue one and both paid and unpaid fines
+- ~20 items (7 books, 7 music, 6 toys) across the three branches
+- An active reservation queue on one item, so the hold/queue-position features have something to show immediately
+
+Not using Visual Studio? `dotnet run` from the project folder does the same thing. For a clean-machine walkthrough with more detail and a troubleshooting section, see **[docs/INSTALLATION.md](docs/INSTALLATION.md)**.
+
+## Changed the seed data? You must delete the database
+
+This is the single most common point of confusion with this project, and it caught development out more than once - worth reading even if you skip everything else here.
+
+**Seeding only ever runs once, the very first time the database is created.** If you edit `Data/SeedData.cs` or `Data/IdentitySeed.cs` - different items, a different branch, a different password - and just press F5 again, **nothing changes**. EF Core sees the database already exists, skips seeding entirely, and you keep looking at the old data wondering why your edit didn't take.
+
+To make a seed change take effect, delete the database so it gets created (and seeded) fresh on the next run:
+
+1. In Visual Studio, open **View → SQL Server Object Explorer**.
+2. Expand `(localdb)\MSSQLLocalDB` → **Databases**.
+3. Find the database named `aspnet-LibrarySystem-...` (the exact name is in `appsettings.json` under `ConnectionStrings:DefaultConnection`).
+4. Right-click it → **Delete**. Tick "Close existing connections" if asked.
+5. Press F5. The app recreates and reseeds the database from scratch.
+
+(Full step-by-step, plus the command-line alternative, is in [docs/INSTALLATION.md](docs/INSTALLATION.md#troubleshooting).)
 
 ## Seeded accounts
 
@@ -10,32 +42,95 @@ A library management system built in ASP.NET Core MVC (.NET 10) — admin item C
 | Reception | `reception@library.com` | `Reception@123` |
 | Manager | `manager@library.com` | `Manager@123` |
 
-## Prerequisites
+Patrons (borrowers) don't have a login at all - there's no public registration or patron password anywhere in the system. The self-service kiosk identifies a patron by a card number, which **is** the borrower's internal ID (1 through 5 for the seeded borrowers - Reception's Borrowers list shows the full names). See [Kiosk](#kiosk) below, and the "Borrower identification" remarks on `KioskController` for why that's a reasonable shortcut for a demo but not what a real deployment should do.
 
-- **.NET 10 SDK**
-- **SQL Server LocalDB** (installed automatically with Visual Studio's "ASP.NET and web development" workload, or standalone via the [SQL Server Express installer](https://www.microsoft.com/sql-server/sql-server-downloads))
-- **Visual Studio 2022, latest version** — the solution uses the `.slnx` format, which needs a recent VS 2022 build for native support. Not on Visual Studio? `dotnet run` from the project folder works identically.
+## Which branch is this running as?
 
-## Running it
+Each running instance of the app operates as exactly one branch, set in `appsettings.json`:
 
-1. Open `LibrarySystem.slnx`.
-2. Press **F5**.
+```json
+"Library": {
+  "BranchCode": "CAS"
+}
+```
 
-That's it. On first run the app creates the LocalDB database, applies all migrations, seeds three role accounts, and seeds ~20 items, 5 borrowers and a mix of loans (including an overdue one and both paid and unpaid fines) — no Package Manager Console, no manual `Update-Database`, no manual SQL.
+Valid codes (from the seed data): `CAS` (Casuarina), `PAL` (Palmerston), `DRW` (Darwin City). Change the value and restart the app - the app checks this at startup and **refuses to start** with a clear error naming the valid codes if it doesn't match a seeded branch, so a typo here fails loudly rather than silently.
 
-## What it does
+**What visibly changes when you switch branch:**
 
-| Role | Capability |
-|---|---|
-| **Admin** | Full CRUD over books, music and toys, each with their own type-specific fields |
-| **Reception** | Borrow/return by library code with automatic fine calculation, borrower CRUD, an overdue-items report, outstanding-fine payment recording, and per-borrower loan history |
-| **Manager** | Read-only dashboards — borrowing, item status and fine statistics, charted with Chart.js |
-| **Public** | Search the catalog by name/description/type/availability, no login required, usable on a phone |
-| **API client** | Read-only `GET /api/v1/*` endpoints (items, categories, branches, status) for an external integration, authenticated with an API key - see [below](#public-read-only-api-v1) |
+- The branch badge in the top-right of the navbar, and the branch name shown on the Manager dashboard's default view.
+- **Reception → Borrow**: an item can only be borrowed if it's physically at *this* branch right now - the error message names which branch it's actually at if not.
+- **Reception → Transfers**: the whole queue is scoped to this branch - "incoming" and "outgoing" are relative to it, and only the source branch of a transfer can mark it in transit.
+- **Reception → Overdue**: only shows loans that were borrowed *at this branch*.
+- **Kiosk** (`/kiosk`): the idle screen's branch name, and which items can be checked out there (same rule as Reception → Borrow).
+
+**What does *not* change:**
+
+- **Manager dashboards and reports** default to every branch, with an optional filter to narrow to one - they don't follow the server's own configured branch.
+- **Reception → Return** accepts a return from any branch (a cross-branch return is legitimate and reconciled by an automatic transfer request back home).
+- **The public catalogue and API** always search across all branches; a branch filter there is something the *visitor* picks, independent of which branch the server itself is configured as.
+- **The notification sweep** processes due-soon/overdue reminders for every branch at once.
+- **Admin bulk import** (CSV or the metadata search) lets the admin choose any branch per item, regardless of which branch the server is running as.
+
+## Navigating each module
+
+| Role | Area | Where | What it's for |
+|---|---|---|---|
+| Admin | Items | `/Items` | Full CRUD over books, music and toys, each with their own type-specific fields |
+| Admin | Import | `/Import` | Bulk-create items from a CSV upload (preview → confirm), or search a mock external metadata source and import one record at a time |
+| Reception | Borrow / Return | `/Reception` | Borrow or return by library code, with automatic fine calculation on return |
+| Reception | Overdue | `/Reception/Overdue` | Loans from this branch still out past their due date |
+| Reception | Fines | `/Reception/Fines` | Outstanding fines, with a "mark paid" action |
+| Reception | Borrowers | `/Borrowers` | Borrower CRUD and per-borrower loan history |
+| Reception | Transfers | `/Transfers` | Raise, track and receive item transfers to/from other branches |
+| Reception | Reservations | `/Reservations` | Place a reservation for a borrower, look up an item's queue, cancel a reservation |
+| Manager | Dashboard | `/Manager` | Borrowing, item status and fine statistics, charted, filterable by branch |
+| Manager | Reports | `/Reports/Borrowing`, `/Reports/FineRevenue`, `/Reports/InventoryHealth` | The same three statistics as detailed, date-ranged reports, each exportable as CSV or PDF |
+| Manager | Notifications | `/Notifications` | Read-only log of every due-soon/overdue/ready-for-pickup notification that's been sent |
+| Public (no login) | Home / Catalog | `/`, `/Catalog` | Browse and search the catalogue across every branch |
+| Public (no login) | Kiosk | `/kiosk` | The self-service touchscreen terminal - see below |
+| API client | API v1 | `/api/v1/*` | Read-only catalogue data for an external integration - see [below](#public-read-only-api-v1) |
+
+## Testing the integrations
+
+A few features are easy to miss because they're not on the obvious happy path of "log in and click Items." Here's how to actually exercise each one.
+
+### The API
+
+Run the app in Development and open **`/swagger`**. Click **Authorize**, paste in the dev key from `appsettings.json` (`ApiKey:Key`, currently `dev-key-f3a9c2d1-library-api`), then use "Try it out" on any endpoint - the key is carried automatically after that. Full endpoint reference is in the [API section](#public-read-only-api-v1) below.
+
+### CSV import
+
+Log in as Admin, go to **Import**, and click **Download Sample CSV** right there on the page - it's a real file committed to the repo (`wwwroot/samples/item-import-sample.csv`), with eight rows covering all three item types and two deliberately broken ones (an unknown branch code, a non-numeric year) so you can see the validation work without crafting your own bad data. Upload it, review the valid/invalid split, confirm, and check the items landed in `/Items`.
+
+### Metadata search import
+
+Same **Import** page, second tab. Search for a title or ISBN - try "mockingbird" or "9781451673319" - pick a result, choose a home branch and a library code, and import it. The ~30 records it searches are bundled in the app itself (no internet access needed).
+
+### Notification sweep
+
+Log in as Manager, go to the **Dashboard**, and click **Run Notification Sweep**. It queues due-soon/overdue reminders (due-soon meaning due within 3 days) and expires any stale reservation holds, then reports what it did. Check **Notifications** afterward to see what was generated - the seed data deliberately has both: Carla Diaz's loan of "Dune" is already overdue, and Emma Wilson's loan of "Rumours" is due in 2 days, so the first sweep after a fresh seed always queues one of each.
+
+### Reservation queue
+
+Two ways to see it:
+
+- **Staff side**: Reception → **Reservations** → Place Reservation, against an item that's already Borrowed (the seed data's "The Hobbit" already has two people queued). Placing another adds a third position; cancelling one renumbers everyone behind it.
+- **Patron side**: search the catalogue (web or kiosk) for an unavailable item - it shows "N waiting" if anyone's queued. At the kiosk, "Place a Hold" on that result walks through entering a card number and joining the queue.
+
+### Kiosk
+
+Just open **`/kiosk`** - no login. It's a self-contained, full-screen experience (no site navigation) designed for a 1024×768 touch terminal. From the idle screen:
+
+- **Check Out**: enter a card number (try `4` - David Chen, who has an outstanding fine but no current loan, so there's nothing to conflict with), then one or more library codes. Try an available code (e.g. `BK-007`) for a successful checkout, and a borrowed one (e.g. `BK-001`) to see the "place a hold instead" offer.
+- **My Account**: enter a card number to see current loans (overdue flagged), outstanding fines, and active reservations with queue positions. Try `3` (Carla Diaz) for a borrower with all three.
+- **Search**: browse the catalogue and place a hold on an unavailable result without needing to already be identified.
+
+Every screen has a visible Cancel/Start Over control, and the session resets to idle after 60 seconds of inactivity, clearing whatever card number was entered.
 
 ## Tech stack
 
-ASP.NET Core MVC · EF Core (Code First) · SQL Server LocalDB · ASP.NET Core Identity (role-based auth) · Bootstrap 5 · Chart.js (vendored locally, not CDN) · Swashbuckle/Swagger (API docs, Development only)
+ASP.NET Core MVC · EF Core (Code First) · SQL Server LocalDB · ASP.NET Core Identity (role-based auth) · Bootstrap 5 · Chart.js (vendored locally, not CDN) · QuestPDF (PDF export) · Swashbuckle/Swagger (API docs, Development only)
 
 ## Public read-only API (v1)
 
@@ -216,5 +311,5 @@ The API never serializes EF entities directly - every response is a hand-built D
 
 ## Documentation
 
-- [`docs/PROJECT_REPORT.md`](docs/PROJECT_REPORT.md) — every module and how it fits together, plus the design reasoning and research behind the key decisions (submitted as `submission/Project Report.docx`)
-- [`docs/DEVELOPMENT_LOG.md`](docs/DEVELOPMENT_LOG.md) — dated build journal (submitted as `submission/Development Log.docx`)
+- [`docs/INSTALLATION.md`](docs/INSTALLATION.md) - standalone setup guide for a clean machine, with a troubleshooting section
+- [`docs/USER-GUIDE.md`](docs/USER-GUIDE.md) - patron-facing guide to searching the catalogue, on the web and at the kiosk

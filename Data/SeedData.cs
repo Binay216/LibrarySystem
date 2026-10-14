@@ -7,9 +7,10 @@ namespace LibrarySystem.Data
     /// <summary>
     /// Seeds sample branches, items, borrowers, loans and transfers so the app is
     /// demonstrable on first run without any manual steps. The loan mix deliberately
-    /// includes an overdue loan, both paid and unpaid fines, and a few items
-    /// borrowed more than once, so the manager dashboards and the reception
-    /// overdue/fines/history reports never show up empty or flat. One item's home
+    /// includes an overdue loan, a loan due soon (within the notification sweep's
+    /// 3-day window), both paid and unpaid fines, and a few items borrowed more than
+    /// once, so the manager dashboards, the reception overdue/fines/history reports,
+    /// and the notification sweep's due-soon path never show up empty or flat. One item's home
     /// and current branch deliberately differ, with a matching open Transfer request
     /// moving it back, and a second, already-completed Transfer gives the status
     /// filter something to show on both sides. Borrowers deliberately mix having a
@@ -112,6 +113,7 @@ namespace LibrarySystem.Data
             var abbeyRoad = music[0];
             var thriller = music[1];
             var backInBlack = music[2];
+            var rumours = music[3];
             var woodenBlocks = toys[0];
             var rcCar = toys[1];
 
@@ -136,6 +138,12 @@ namespace LibrarySystem.Data
                 // Currently out, not yet due.
                 new() { Item = hobbit, Borrower = alice, BorrowedAtBranchId = hobbit.CurrentBranchId, BorrowedDate = today.AddDays(-5), DueDate = today.AddDays(9) },
                 new() { Item = abbeyRoad, Borrower = brian, BorrowedAtBranchId = abbeyRoad.CurrentBranchId, BorrowedDate = today.AddDays(-2), DueDate = today.AddDays(12) },
+
+                // Currently out and due soon - within the notification sweep's 3-day
+                // due-soon window, using ILibraryClock's today so this stays correct
+                // relative to whenever the database is actually seeded, not a fixed
+                // calendar date.
+                new() { Item = rumours, Borrower = emma, BorrowedAtBranchId = rumours.CurrentBranchId, BorrowedDate = today.AddDays(-12), DueDate = today.AddDays(2) },
 
                 // Currently out and overdue - no fine yet, it is finalised on return.
                 new() { Item = dune, Borrower = carla, BorrowedAtBranchId = dune.CurrentBranchId, BorrowedDate = today.AddDays(-20), DueDate = today.AddDays(-6) },
@@ -172,6 +180,7 @@ namespace LibrarySystem.Data
 
             hobbit.Status = ItemStatus.Borrowed;
             abbeyRoad.Status = ItemStatus.Borrowed;
+            rumours.Status = ItemStatus.Borrowed;
             dune.Status = ItemStatus.Borrowed;
             woodenBlocks.Status = ItemStatus.Damaged;
             rcCar.Status = ItemStatus.Destroyed;
