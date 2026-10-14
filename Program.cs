@@ -56,6 +56,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
     };
 });
 
+builder.Services.Configure<ApiKeyOptions>(builder.Configuration.GetSection(ApiKeyOptions.SectionName));
 builder.Services.Configure<FinePolicyOptions>(builder.Configuration.GetSection(FinePolicyOptions.SectionName));
 builder.Services.Configure<LibraryClockOptions>(builder.Configuration.GetSection(LibraryClockOptions.SectionName));
 builder.Services.Configure<LibraryOptions>(builder.Configuration.GetSection(LibraryOptions.SectionName));
