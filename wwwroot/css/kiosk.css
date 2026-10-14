@@ -62,7 +62,11 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  /* flex-start + scroll, not center: some screens (checkout's running list,
+     account summary) can get taller than the viewport, and centering an
+     overflowing flex column clips its top rather than scrolling to it. */
+  justify-content: flex-start;
+  overflow-y: auto;
   padding: 2rem;
   text-align: center;
 }
@@ -212,20 +216,6 @@ html, body {
   background-color: var(--accent-dark);
 }
 
-/* Coming soon screen */
-.kiosk-comingsoon-icon {
-  font-size: 4rem;
-  color: var(--accent);
-  margin-bottom: 1rem;
-}
-
-.kiosk-comingsoon-text {
-  font-size: 1.4rem;
-  color: var(--bs-secondary-color);
-  max-width: 560px;
-  margin-bottom: 2.5rem;
-}
-
 .kiosk-startover-btn {
   min-height: 80px;
   min-width: 280px;
@@ -241,4 +231,144 @@ html, body {
 .kiosk-startover-btn:focus {
   color: #fff;
   background-color: var(--accent-dark);
+}
+
+.kiosk-result-icon {
+  font-size: 4rem;
+  color: var(--accent);
+  margin-bottom: 1rem;
+}
+
+/* Plain-language status banners - success/error messages from a transaction attempt */
+.kiosk-alert {
+  width: 100%;
+  max-width: 640px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+  border-radius: 0.75rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+.kiosk-alert-success {
+  background-color: #e6f4ea;
+  color: #1e4620;
+  border: 2px solid #34a853;
+}
+
+.kiosk-alert-error {
+  background-color: #fdecea;
+  color: #7a1a1a;
+  border: 2px solid #d93025;
+}
+
+.kiosk-section-heading {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.kiosk-muted {
+  color: var(--bs-secondary-color);
+  font-size: 1.1rem;
+}
+
+/* Reusable row list - checkout's running list, account summary, search results */
+.kiosk-list {
+  width: 100%;
+  max-width: 820px;
+}
+
+.kiosk-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  padding: 0.75rem 1.25rem;
+  margin-bottom: 0.6rem;
+  background-color: #fff;
+  border: 2px solid var(--accent-light);
+  border-radius: 0.75rem;
+  text-align: left;
+  font-size: 1.1rem;
+}
+
+.kiosk-list-row-overdue {
+  border-color: #d93025;
+  background-color: #fdecea;
+}
+
+.kiosk-list-name {
+  font-weight: 600;
+  flex: 1 1 220px;
+}
+
+.kiosk-list-code {
+  color: var(--bs-secondary-color);
+  font-family: monospace;
+  font-size: 1rem;
+}
+
+.kiosk-list-due {
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.kiosk-list-row-overdue .kiosk-list-due {
+  color: #d93025;
+}
+
+.kiosk-badge {
+  display: inline-block;
+  padding: 0.3rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.kiosk-badge-available {
+  background-color: #e6f4ea;
+  color: #1e4620;
+}
+
+.kiosk-badge-unavailable {
+  background-color: #fdecea;
+  color: #7a1a1a;
+}
+
+.kiosk-hold-btn {
+  min-height: 56px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1.25rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #fff;
+  background-color: var(--accent);
+  border: none;
+  border-radius: 0.5rem;
+  white-space: nowrap;
+}
+
+.kiosk-hold-btn:hover,
+.kiosk-hold-btn:focus {
+  color: #fff;
+  background-color: var(--accent-dark);
+}
+
+.kiosk-search-form {
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.kiosk-search-input {
+  flex: 1 1 auto;
 }

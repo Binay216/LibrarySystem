@@ -1,0 +1,60 @@
+@model KioskPlaceHoldViewModel
+@{
+    ViewData["Title"] = "Place a Hold";
+    ViewData["KioskShowCancel"] = true;
+}
+
+@if (Model.ResultMessage is not null && !Model.NeedsCardNumber)
+{
+    <i class="bi @(Model.ResultSucceeded == true ? "bi-check-circle" : "bi-x-circle") kiosk-result-icon" aria-hidden="true"></i>
+    <h1 class="kiosk-prompt">@Model.ItemName</h1>
+    <div class="kiosk-alert @(Model.ResultSucceeded == true ? "kiosk-alert-success" : "kiosk-alert-error")">
+        @Model.ResultMessage
+    </div>
+
+    <div class="d-flex gap-3 flex-wrap justify-content-center mt-3">
+        @if (Model.ReturnTo == "checkout")
+        {
+            <a asp-action="CheckOutItems" class="btn kiosk-continue-btn">
+                <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Continue Checking Out
+            </a>
+        }
+        @if (Model.ReturnTo == "search")
+        {
+            <a asp-action="Search" class="btn kiosk-continue-btn">
+                <i class="bi bi-search me-1" aria-hidden="true"></i>Keep Browsing
+            </a>
+        }
+        <a asp-action="Reset" class="btn kiosk-startover-btn">
+            <i class="bi bi-house-door me-2" aria-hidden="true"></i>Done
+        </a>
+    </div>
+}
+else
+{
+    <h1 class="kiosk-prompt">Place a Hold: @Model.ItemName</h1>
+
+    @if (Model.ResultMessage is not null)
+    {
+        <div class="kiosk-alert kiosk-alert-error">@Model.ResultMessage</div>
+    }
+
+    <form asp-action="PlaceHold" method="post">
+        <input type="hidden" name="libraryCode" value="@Model.LibraryCode" />
+        <input type="hidden" name="returnTo" value="@Model.ReturnTo" />
+
+        @if (Model.NeedsCardNumber)
+        {
+            <input type="text" id="cardNumber" name="cardNumber" class="kiosk-display-input" readonly inputmode="none" aria-label="Card number" autocomplete="off" />
+            <partial name="_KioskKeypad" model="@(new KioskKeypadViewModel { TargetSelector = "#cardNumber", Mode = KioskKeypadMode.Numeric })" />
+        }
+        else
+        {
+            <p class="kiosk-muted">You'll be added to the queue for this item using your card number from this visit.</p>
+        }
+
+        <button type="submit" class="btn kiosk-continue-btn">
+            <i class="bi bi-bookmark-plus me-1" aria-hidden="true"></i>Confirm Hold
+        </button>
+    </form>
+}

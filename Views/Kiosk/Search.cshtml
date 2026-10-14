@@ -1,3 +1,4 @@
+@model KioskSearchViewModel
 @{
     ViewData["Title"] = "Search";
     ViewData["KioskShowCancel"] = true;
@@ -5,10 +6,45 @@
 
 <h1 class="kiosk-prompt">Search the Catalogue</h1>
 
-<input type="text" id="searchTerm" class="kiosk-display-input" readonly inputmode="none" aria-label="Search term" autocomplete="off" />
+<form asp-action="Search" method="get">
+    <input type="text" id="searchTerm" name="term" class="kiosk-display-input" readonly inputmode="none" aria-label="Search term" autocomplete="off" value="@Model.Term" />
 
-<partial name="_KioskKeypad" model="@(new KioskKeypadViewModel { TargetSelector = "#searchTerm", Mode = KioskKeypadMode.Alphanumeric })" />
+    <partial name="_KioskKeypad" model="@(new KioskKeypadViewModel { TargetSelector = "#searchTerm", Mode = KioskKeypadMode.Alphanumeric })" />
 
-<a asp-action="ComingSoon" asp-route-from="Search" class="btn kiosk-continue-btn">
-    Continue <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
-</a>
+    <button type="submit" class="btn kiosk-continue-btn">
+        <i class="bi bi-search me-1" aria-hidden="true"></i>Search
+    </button>
+</form>
+
+@if (Model.HasSearched)
+{
+    <h2 class="kiosk-section-heading">Results (@Model.Results.Count)</h2>
+    @if (Model.Results.Count == 0)
+    {
+        <p class="kiosk-muted">No matching items.</p>
+    }
+    else
+    {
+        <div class="kiosk-list">
+            @foreach (var item in Model.Results)
+            {
+                var available = item.Status == ItemStatus.Available;
+                <div class="kiosk-list-row">
+                    <span class="kiosk-list-name">@item.Name <span class="kiosk-list-code">(@item.TypeLabel, @item.Summary)</span></span>
+                    <span class="kiosk-list-code">@item.LibraryCode &middot; @item.CurrentBranchName</span>
+                    @if (available)
+                    {
+                        <span class="kiosk-badge kiosk-badge-available">Available</span>
+                    }
+                    else
+                    {
+                        <span class="kiosk-badge kiosk-badge-unavailable">@item.Status</span>
+                        <a asp-action="PlaceHold" asp-route-libraryCode="@item.LibraryCode" asp-route-returnTo="search" class="btn kiosk-hold-btn">
+                            <i class="bi bi-bookmark-plus me-1" aria-hidden="true"></i>Place a Hold
+                        </a>
+                    }
+                </div>
+            }
+        </div>
+    }
+}

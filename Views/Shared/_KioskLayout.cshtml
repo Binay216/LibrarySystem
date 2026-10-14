@@ -3,7 +3,7 @@
     var branch = await CurrentBranchAccessor.GetCurrentBranchAsync();
     var showCancel = ViewData["KioskShowCancel"] as bool? ?? false;
     var suppressTimeout = ViewData["KioskSuppressTimeout"] as bool? ?? false;
-    var resetUrl = suppressTimeout ? "" : Url.Action("Index", "Kiosk");
+    var resetUrl = suppressTimeout ? "" : Url.Action("Reset", "Kiosk");
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -21,7 +21,7 @@
         <span class="kiosk-header-branch"><i class="bi bi-geo-alt-fill me-1" aria-hidden="true"></i>@branch.Name Kiosk</span>
         @if (showCancel)
         {
-            <a asp-controller="Kiosk" asp-action="Index" class="btn kiosk-cancel-btn">
+            <a asp-controller="Kiosk" asp-action="Reset" class="btn kiosk-cancel-btn">
                 <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Cancel / Start Over
             </a>
         }

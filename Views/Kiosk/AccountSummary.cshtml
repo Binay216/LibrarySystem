@@ -1,0 +1,77 @@
+@model KioskAccountSummaryViewModel
+@{
+    ViewData["Title"] = "My Account";
+    ViewData["KioskShowCancel"] = true;
+}
+
+<h1 class="kiosk-prompt">@Model.BorrowerName</h1>
+
+<h2 class="kiosk-section-heading">Current Loans (@Model.CurrentLoans.Count)</h2>
+@if (Model.CurrentLoans.Count == 0)
+{
+    <p class="kiosk-muted">No items currently on loan.</p>
+}
+else
+{
+    <div class="kiosk-list">
+        @foreach (var loan in Model.CurrentLoans)
+        {
+            <div class="kiosk-list-row @(loan.IsOverdue ? "kiosk-list-row-overdue" : "")">
+                <span class="kiosk-list-name">
+                    @loan.ItemName
+                    @if (loan.IsOverdue)
+                    {
+                        <span class="kiosk-badge kiosk-badge-unavailable ms-2">Overdue</span>
+                    }
+                </span>
+                <span class="kiosk-list-code">@loan.LibraryCode</span>
+                <span class="kiosk-list-due">Due @loan.DueDate.ToString("d MMM yyyy")</span>
+            </div>
+        }
+    </div>
+}
+
+<h2 class="kiosk-section-heading">Outstanding Fines (@Model.OutstandingFines.Count)</h2>
+@if (Model.OutstandingFines.Count == 0)
+{
+    <p class="kiosk-muted">No outstanding fines.</p>
+}
+else
+{
+    <div class="kiosk-list">
+        @foreach (var fine in Model.OutstandingFines)
+        {
+            <div class="kiosk-list-row kiosk-list-row-overdue">
+                <span class="kiosk-list-name">@fine.ItemName</span>
+                <span class="kiosk-list-code">@fine.LibraryCode</span>
+                <span class="kiosk-list-due">@fine.FineAmount.ToString("C")</span>
+            </div>
+        }
+    </div>
+    <p class="kiosk-muted">Please see a staff member to pay an outstanding fine.</p>
+}
+
+<h2 class="kiosk-section-heading">Active Reservations (@Model.Reservations.Count)</h2>
+@if (Model.Reservations.Count == 0)
+{
+    <p class="kiosk-muted">No active reservations.</p>
+}
+else
+{
+    <div class="kiosk-list">
+        @foreach (var reservation in Model.Reservations)
+        {
+            <div class="kiosk-list-row">
+                <span class="kiosk-list-name">@reservation.ItemName</span>
+                <span class="kiosk-list-code">@reservation.LibraryCode</span>
+                <span class="kiosk-list-due">
+                    @(reservation.Status == ReservationStatus.Ready ? "Ready for pickup" : $"Queue position {reservation.QueuePosition}")
+                </span>
+            </div>
+        }
+    </div>
+}
+
+<a asp-action="Reset" class="btn kiosk-startover-btn mt-4">
+    <i class="bi bi-house-door me-2" aria-hidden="true"></i>Done
+</a>

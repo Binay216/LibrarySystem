@@ -1,0 +1,57 @@
+@model KioskCheckOutItemsViewModel
+@{
+    ViewData["Title"] = "Check Out";
+    ViewData["KioskShowCancel"] = true;
+}
+
+<h1 class="kiosk-prompt">Checking Out: @Model.BorrowerName</h1>
+
+@if (TempData["StatusMessage"] is string statusMessage)
+{
+    <div class="kiosk-alert kiosk-alert-success">@statusMessage</div>
+}
+@if (TempData["ErrorMessage"] is string errorMessage)
+{
+    <div class="kiosk-alert kiosk-alert-error">
+        <p class="mb-2">@errorMessage</p>
+        @if (Model.HoldOfferLibraryCode is not null)
+        {
+            <a asp-action="PlaceHold" asp-route-libraryCode="@Model.HoldOfferLibraryCode" asp-route-returnTo="checkout" class="btn kiosk-hold-btn">
+                <i class="bi bi-bookmark-plus me-1" aria-hidden="true"></i>Place a Hold Instead
+            </a>
+        }
+    </div>
+}
+
+<form asp-action="CheckOutItems" method="post">
+    <input type="text" id="libraryCode" name="libraryCode" class="kiosk-display-input" readonly inputmode="none" aria-label="Library code" autocomplete="off" />
+
+    <partial name="_KioskKeypad" model="@(new KioskKeypadViewModel { TargetSelector = "#libraryCode", Mode = KioskKeypadMode.Alphanumeric })" />
+
+    <button type="submit" class="btn kiosk-continue-btn">
+        <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>Add Item
+    </button>
+</form>
+
+<h2 class="kiosk-section-heading">Checked Out This Visit (@Model.CheckedOutItems.Count)</h2>
+@if (Model.CheckedOutItems.Count == 0)
+{
+    <p class="kiosk-muted">Nothing checked out yet.</p>
+}
+else
+{
+    <div class="kiosk-list">
+        @foreach (var item in Model.CheckedOutItems)
+        {
+            <div class="kiosk-list-row">
+                <span class="kiosk-list-name">@item.ItemName</span>
+                <span class="kiosk-list-code">@item.LibraryCode</span>
+                <span class="kiosk-list-due">Due @item.DueDate.ToString("d MMM yyyy")</span>
+            </div>
+        }
+    </div>
+}
+
+<a asp-action="Reset" class="btn kiosk-startover-btn mt-4">
+    <i class="bi bi-check2-circle me-2" aria-hidden="true"></i>Finish
+</a>

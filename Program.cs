@@ -28,6 +28,17 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.Requ
     .AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddControllersWithViews();
 
+// In-memory session store for the kiosk's multi-screen flow (card number,
+// running checkout list). A single kiosk terminal, in-process cache is fine -
+// nothing here needs to survive an app restart or be shared across machines.
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(10);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
 // No existing controller has [ApiController] - only the new api/v1
 // controllers (Controllers/Api) do - so this only changes behavior for
 // those: a model-binding failure (e.g. an unparseable query param) gets the
@@ -86,6 +97,7 @@ builder.Services.AddScoped<IImportService, ImportService>();
 // say) can replace the mock by changing only this one registration line - no
 // controller, view or service code would need to change.
 builder.Services.AddScoped<IMetadataProvider, MockMetadataProvider>();
+builder.Services.AddScoped<IKioskService, KioskService>();
 
 // Swagger - services are always registered (cheap, harmless), but the UI
 // middleware is only mapped in Development, below. "Try it out" needs the
@@ -168,6 +180,8 @@ else
 
 app.UseHttpsRedirection();
 app.UseRouting();
+
+app.UseSession();
 
 app.UseAuthorization();
 

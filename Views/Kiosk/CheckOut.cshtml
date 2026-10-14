@@ -3,12 +3,24 @@
     ViewData["KioskShowCancel"] = true;
 }
 
-<h1 class="kiosk-prompt">Enter the Library Code</h1>
+<h1 class="kiosk-prompt">Enter Your Card Number to Check Out</h1>
 
-<input type="text" id="libraryCode" class="kiosk-display-input" readonly inputmode="none" aria-label="Library code" autocomplete="off" />
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="kiosk-alert kiosk-alert-error">
+        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <p class="mb-0">@error.ErrorMessage</p>
+        }
+    </div>
+}
 
-<partial name="_KioskKeypad" model="@(new KioskKeypadViewModel { TargetSelector = "#libraryCode", Mode = KioskKeypadMode.Numeric })" />
+<form asp-action="CheckOut" method="post">
+    <input type="text" id="cardNumber" name="cardNumber" class="kiosk-display-input" readonly inputmode="none" aria-label="Card number" autocomplete="off" />
 
-<a asp-action="ComingSoon" asp-route-from="Check Out" class="btn kiosk-continue-btn">
-    Continue <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
-</a>
+    <partial name="_KioskKeypad" model="@(new KioskKeypadViewModel { TargetSelector = "#cardNumber", Mode = KioskKeypadMode.Numeric })" />
+
+    <button type="submit" class="btn kiosk-continue-btn">
+        Continue <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
+    </button>
+</form>
