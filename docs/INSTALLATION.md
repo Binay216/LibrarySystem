@@ -2,13 +2,16 @@
 
 A step-by-step setup guide for LibrarySystem on a clean Windows machine, written for someone who has never seen the project before. The same instructions work regardless of which branch (Casuarina, Palmerston or Darwin City) this particular installation is set up to represent - that's a one-line configuration change covered near the end, not a different setup process.
 
+> These instructions were verified end-to-end on a clean Windows Server 2019 virtual machine with Visual Studio 2026 Community (a fresh clone, nothing pre-installed beyond the OS).
+
 ## What you need
 
 - **Windows**, with administrator rights to install software.
-- **Visual Studio 2022** (any edition, including the free Community edition), with the **"ASP.NET and web development"** workload installed. This workload brings in everything else you need - the .NET SDK and SQL Server LocalDB - so if you're installing Visual Studio fresh, just tick that workload during setup and skip the next two bullets.
+- **Visual Studio 2022 or later** (any edition, including the free Community edition), with the **"ASP.NET and web development"** workload installed. This workload brings in everything else you need - the .NET SDK and SQL Server LocalDB - so if you're installing Visual Studio fresh, just tick that workload during setup and skip the next two bullets.
 - **.NET 10 SDK** - already included by the workload above. To check whether you have it separately, open a terminal and run `dotnet --version`; you want `10.x`.
 - **SQL Server LocalDB** - also included by the workload above. This is a lightweight, single-user SQL Server that runs on your own machine with no separate install or service to manage; you do not need SQL Server Management Studio, a server, or a network connection.
 - **Git** (or GitHub Desktop, or Visual Studio's own built-in Git support) to clone the repository.
+- **A modern browser** - Chrome, Edge or Firefox. Internet Explorer (still the default browser on Windows Server) does not render the interface correctly and is not supported.
 
 If Visual Studio is already installed without that workload, open the **Visual Studio Installer** (search for it in the Start menu), find your Visual Studio 2022 install, click **Modify**, tick **ASP.NET and web development**, and click **Modify** again to install it.
 
@@ -119,6 +122,19 @@ dotnet dev-certs https --trust
 ```
 
 Accept the prompt that appears, then run the app again. Alternatively, choose the **http** launch profile instead of **https** in Visual Studio's run-button dropdown - the app works identically over plain HTTP for local development.
+
+### Build fails with "contains a virus or potentially unwanted software"
+
+Symptoms: the build fails with `MSB3021` or `MSB3030`, naming `QuestPdfSkia.dll` and saying it "contains a virus or potentially unwanted software" or that the file could not be copied/found.
+
+This is **Windows Defender quarantining a false positive**. `QuestPdfSkia.dll` is a legitimate native graphics binary (Skia) bundled inside the QuestPDF NuGet package, used to generate the PDF reports - it is sometimes flagged incorrectly by Defender's heuristics, especially right after it's extracted into the NuGet package cache on a brand-new machine.
+
+To fix it:
+
+1. **Exclude the NuGet package cache from Defender**, so it stops re-scanning (and re-quarantining) files there: open **Windows Security → Virus & threat protection → Manage settings → Add or remove exclusions**, and add the folder `%userprofile%\.nuget\packages` as a **Folder** exclusion.
+2. **Restore the quarantined file**: open **Windows Security → Virus & threat protection → Protection history**, find the entry for `QuestPdfSkia.dll`, and choose **Restore** (or **Allow on device**).
+   - If it's no longer listed there (Defender can delete rather than quarantine), instead clear the NuGet cache and let it restore fresh now that the exclusion is in place: run `dotnet nuget locals all --clear` from a terminal, then rebuild - NuGet re-downloads and re-extracts the package and the exclusion from step 1 keeps Defender from touching it this time.
+3. **Rebuild** the solution.
 
 ### "Port already in use" on startup
 
