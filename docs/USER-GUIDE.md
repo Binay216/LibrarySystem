@@ -16,7 +16,7 @@ This guide shows, screen by screen, how to find and reserve items in the library
 
 **Part 2 is for library staff.** It shows the Reception, Manager and Admin screens that sit behind what patrons see, so the whole system can be followed from end to end.
 
-Every screenshot was taken from a running copy of the system set up as Casuarina Library, using the sample data it creates on first run. A full list of figures is at the end.
+Every screenshot was taken from a running copy of the system set up as Casuarina Library, using the sample data it creates on first run. A full list of figures follows the contents at the start of this guide.
 
 ## Part 1 — For library patrons
 
@@ -474,9 +474,9 @@ The lookup uses a built-in sample catalogue, so it works without an internet con
 
 Other systems can read the catalogue through a read-only API.
 
-1.  With the application running from Visual Studio, go to `/swagger`, for example `http://localhost:5105/swagger`. The page is only available in development mode, which is how Visual Studio runs it.
+1.  With the application running from Visual Studio, go to `/swagger`, for example `https://localhost:7009/swagger`. The page is only available in development mode, which is how Visual Studio runs it.
 
-2.  Click **Authorize**, enter the API key (given in the README), and click **Authorize** again.
+2.  Click **Authorize**, enter the API key (the development key is in `appsettings.json` under `ApiKey:Key`, and in the README), and click **Authorize** again.
 
 3.  Open any endpoint, click **Try it out**, then **Execute** to see a live response (Figure 18).
 
