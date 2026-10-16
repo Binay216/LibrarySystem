@@ -1,141 +1,218 @@
-# Installation Guide
+# Installation and Running Instructions
 
-A step-by-step setup guide for LibrarySystem on a clean Windows machine, written for someone who has never seen the project before. The same instructions work regardless of which branch (Casuarina, Palmerston or Darwin City) this particular installation is set up to represent - that's a one-line configuration change covered near the end, not a different setup process.
+*HIT339 Distributed Development — Library Management System. Binay Siwakoti (S387596). Repository: [github.com/Binay216/LibrarySystem](https://github.com/Binay216/LibrarySystem)*
 
-> These instructions were verified end-to-end on a clean Windows Server 2019 virtual machine with Visual Studio 2026 Community (a fresh clone, nothing pre-installed beyond the OS).
+## About this manual
 
-## What you need
+Following these steps on a clean Windows machine produces a working library system for any one of the three branch locations, in about 15 minutes.
 
-- **Windows**, with administrator rights to install software.
-- **Visual Studio 2022 or later** (any edition, including the free Community edition), with the **"ASP.NET and web development"** workload installed. This workload brings in everything else you need - the .NET SDK and SQL Server LocalDB - so if you're installing Visual Studio fresh, just tick that workload during setup and skip the next two bullets.
-- **.NET 10 SDK** - already included by the workload above. To check whether you have it separately, open a terminal and run `dotnet --version`; you want `10.x`.
-- **SQL Server LocalDB** - also included by the workload above. This is a lightweight, single-user SQL Server that runs on your own machine with no separate install or service to manage; you do not need SQL Server Management Studio, a server, or a network connection.
-- **Git** (or GitHub Desktop, or Visual Studio's own built-in Git support) to clone the repository.
-- **A modern browser** - Chrome, Edge or Firefox. Internet Explorer (still the default browser on Windows Server) does not render the interface correctly and is not supported.
+|            |                                                                                       |
+|------------|---------------------------------------------------------------------------------------|
+| Project    | Library Management System — Group Project Management and Horizontal Feature Expansion |
+| Unit       | HIT339 Distributed Development, Charles Darwin University                             |
+| Author     | Binay Siwakoti (S387596), sole group member                                           |
+| Repository | https://github.com/Binay216/LibrarySystem                                             |
 
-If Visual Studio is already installed without that workload, open the **Visual Studio Installer** (search for it in the Start menu), find your Visual Studio 2022 install, click **Modify**, tick **ASP.NET and web development**, and click **Modify** again to install it.
+**One set of instructions for every branch.** Casuarina, Palmerston and Darwin City all follow exactly the same steps. The only difference is a single configuration value chosen in Step 2. There is no separate codebase or git branch per location.
 
-## Step 1: Get the code
+**Written for** someone who has never seen this project and has no database experience. No commands need to be typed beyond the one `git clone`.
 
-Clone the repository to a folder on your machine. In a terminal:
+> **Verified on a clean virtual machine.** These instructions were followed end to end on a fresh Windows Server 2019 virtual machine running Visual Studio 2026 Community, starting from nothing but the operating system and a fresh clone of the repository, and then repeated for each branch location: Casuarina, Palmerston and Darwin City. The full test record, including the issues found and how each was handled, is in the *Virtual machine test* section.
 
-```
-git clone <repository-url>
-```
+## Prerequisites
 
-(Replace `<repository-url>` with the actual clone URL for this repository.) If you'd rather not use the command line, Visual Studio's **Clone a repository** option on its start screen, or GitHub Desktop, do the same thing.
+Visual Studio with the ASP.NET workload installs everything except Git and a browser.
 
-## Step 2: Open and run
+| Requirement                                                                 | Notes                                                                                                              |
+|-----------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
+| Windows with administrator rights                                           | Needed to install the tools below                                                                                  |
+| Visual Studio 2022 or later, any edition (the free Community edition works) | Must include the **ASP.NET and web development** workload                                                          |
+| .NET 10 SDK                                                                 | Installed by the workload. Check with `dotnet --version`; expect `10.x`                                            |
+| SQL Server LocalDB                                                          | Installed by the workload. A local database engine with no server, service or network setup                        |
+| Git                                                                         | Or GitHub Desktop, or Visual Studio's built-in Git support                                                         |
+| A modern browser                                                            | Chrome, Edge or Firefox. **Internet Explorer is not supported** and is still the default browser on Windows Server |
 
-1. In the cloned folder, double-click **`LibrarySystem.slnx`**. This opens the solution in Visual Studio.
-   - `.slnx` is a newer solution file format than the traditional `.sln`. A recent Visual Studio 2022 build opens it natively with no extra steps. If your Visual Studio is old enough not to recognise it, update Visual Studio via the Visual Studio Installer.
-2. Wait for Visual Studio to finish restoring NuGet packages (a progress indicator shows in the status bar at the bottom; this only takes a while the first time).
-3. Press **F5** (or click the green ▶ **http** / **https** run button in the toolbar).
+**Adding the workload to an existing Visual Studio:**
 
-That's the entire setup. On this first run:
+1.  Open the **Visual Studio Installer**.
 
-- A new LocalDB database is created automatically.
-- Every EF Core migration is applied automatically.
-- The database is seeded automatically: 3 branches, 3 staff logins (Admin/Reception/Manager), 5 borrowers, and around 20 items with a realistic mix of loans, fines and reservations.
+2.  Find your installation and click **Modify**.
 
-No Package Manager Console commands, no `Update-Database`, no manually running SQL scripts. A browser window opens by itself pointing at the running app (`http://localhost:5105` by default).
+3.  Tick **ASP.NET and web development**.
 
-## Step 3: Confirm it worked
+4.  Click **Modify** again and wait for it to finish.
 
-1. On the home page, click **Log in** (or go to `/Identity/Account/Login`).
-2. Sign in as the Manager account: email `manager@library.com`, password `Manager@123`.
-3. You should land on a dashboard with charts and numbers already populated - that confirms the database was created and seeded correctly.
+## Step 1 — Download the project from the git repository
 
-The full set of seeded logins:
+Clone the repository to any folder on the machine. Use whichever of the three methods below you are comfortable with; they produce the same result.
 
-| Role | Email | Password |
-|---|---|---|
-| Admin | `admin@library.com` | `Admin@123` |
-| Reception | `reception@library.com` | `Reception@123` |
-| Manager | `manager@library.com` | `Manager@123` |
+**Option A — command line** (Command Prompt, PowerShell or Git Bash):
 
-## Setting which branch this installation represents
+    git clone https://github.com/Binay216/LibrarySystem.git
 
-Open `appsettings.json` in the project root and find:
+**Option B — Visual Studio:**
 
-```json
-"Library": {
-  "BranchCode": "CAS"
-}
-```
+1.  Open Visual Studio and choose **Clone a repository** on the start screen.
 
-Change `"CAS"` to `"PAL"` (Palmerston) or `"DRW"` (Darwin City) to make this installation represent a different branch, then stop and restart the app (press the red ■ stop button, then **F5** again - a config file change isn't picked up by a running app). The app validates this value against the seeded branches every time it starts, so a typo here is reported immediately and clearly rather than causing confusing behaviour later - see [Troubleshooting](#unknown-branch-code-at-startup) below if you see that error.
+2.  Paste `https://github.com/Binay216/LibrarySystem.git` into **Repository location**.
 
-This setting affects which branch's items can be borrowed through Reception or the kiosk, which branch's transfer queue and overdue list Reception sees, and which branch the kiosk identifies itself as. It does **not** affect the Manager dashboards/reports (which default to showing every branch) or the public catalogue/API (which always search every branch). See the main [README](../README.md#which-branch-is-this-running-as) for the full breakdown.
+3.  Choose a local path, for example `C:\Projects\LibrarySystem`, and click **Clone**.
+
+**Option C — GitHub Desktop:** **File → Clone repository → URL**, paste the same address, choose a path and click **Clone**.
+
+The repository uses a single main line of code for all three branch locations. Do not look for a git branch named after a library; there isn't one, by design.
+
+## Step 2 — Choose the branch location
+
+The branch an installation represents is set by one value in `appsettings.json`. The default is Casuarina; skip this step if that is the branch you want.
+
+1.  In the cloned folder, open `appsettings.json` in Notepad or Visual Studio.
+
+2.  Find this section:
+
+<!-- -->
+
+    "Library": {"BranchCode": "CAS"}
+
+3.  Change `CAS` to the code for your branch, then save the file.
+
+| Branch location     | Code            |
+|---------------------|-----------------|
+| Casuarina Library   | `CAS` (default) |
+| Palmerston Library  | `PAL`           |
+| Darwin City Library | `DRW`           |
+
+The code is checked against the seeded branches when the application starts. A mistyped code stops the application straight away with a message listing the valid codes, rather than letting it run in a confusing state.
+
+**What the branch setting changes:** the branch name shown in the header, which items Reception can borrow and return, which transfers appear in the transfer queue, the overdue list, and the branch the kiosk identifies itself as.
+
+**What stays the same at every branch:** Manager dashboards and reports (they show all branches and have their own branch filter), and the public catalogue and API (they always search every branch).
+
+If you change the code later, stop the application and start it again. A running application does not pick up configuration changes.
+
+## Step 3 — Open the solution and run
+
+Pressing F5 is the whole setup. The database is created, migrated and filled with sample data automatically on the first run.
+
+1.  In the cloned folder, double-click `LibrarySystem.slnx`. This is the newer solution file format, which current Visual Studio opens natively. Open the solution file, not the folder; opening the folder gives a file view with no run button.
+
+2.  Wait for NuGet package restore to finish. Progress shows in the status bar at the bottom; it only takes time on the first run.
+
+3.  Press **F5** (or the green **Run** button).
+
+On the first run the application automatically:
+
+- creates the LocalDB database,
+
+- applies every Entity Framework migration,
+
+- seeds three branches, three staff accounts, five borrowers and twenty items, with a realistic mix of loans, fines, reservations and transfers.
+
+There are no Package Manager Console commands, no `Update-Database`, and no SQL scripts to run by hand. A browser window opens on the home page when it is ready.
+
+The site runs at `https://localhost:7009`, or `http://localhost:5105` if you choose the **http** launch profile.
+
+## Step 4 — Confirm it worked
+
+Sign in as the Manager and check the dashboard shows populated charts. That one check proves the database was created, migrated and seeded correctly.
+
+1.  Click **Login** in the top right.
+
+2.  Sign in with `manager@library.com` / `Manager@123`.
+
+3.  Open the Manager dashboard and confirm the charts and figures show data, not zeros.
+
+4.  Check the header shows the branch name you chose in Step 2.
+
+The public catalogue needs no login; it is reachable from the home page as soon as the application starts.
+
+**Seeded staff accounts:**
+
+| Role      | Email                   | Password        | Can do                                                |
+|-----------|-------------------------|-----------------|-------------------------------------------------------|
+| Admin     | `admin@library.com`     | `Admin@123`     | Manage items, bulk CSV import, API documentation      |
+| Reception | `reception@library.com` | `Reception@123` | Borrow and return, borrowers, reservations, transfers |
+| Manager   | `manager@library.com`   | `Manager@123`   | Dashboards, notifications, reports and exports        |
+
+These are demonstration credentials, documented deliberately so the system can be assessed straight away.
+
+## Quick reference — setting up each branch location
+
+Every branch runs the same four steps; only the value in Step 2 differs.
+
+| Step                                    | Casuarina                  | Palmerston              | Darwin City              |
+|-----------------------------------------|----------------------------|-------------------------|--------------------------|
+| 1\. Clone the repository                | Same                       | Same                    | Same                     |
+| 2\. Set `Library:BranchCode`            | `CAS` (default, no change) | `PAL`                   | `DRW`                    |
+| 3\. Open `LibrarySystem.slnx`, press F5 | Same                       | Same                    | Same                     |
+| 4\. Log in as Manager and check         | Header shows Casuarina     | Header shows Palmerston | Header shows Darwin City |
+
+## Virtual machine test
+
+The brief asks for these instructions to be tested on a virtual machine. They were followed exactly as written on a clean virtual machine, and the application built, created its database, seeded its sample data and ran. Four issues surfaced along the way: one was fixed in the code, and three are now covered in this manual. The branch setting was then changed to Palmerston, and then to Darwin City, and the same instructions were run again each time.
+
+**Test environment**
+
+|                       |                                                                                                                    |
+|-----------------------|--------------------------------------------------------------------------------------------------------------------|
+| Machine               | Fresh Windows Server 2019 virtual machine                                                                          |
+| Software installed    | Visual Studio 2026 Community with the ASP.NET and web development workload                                         |
+| Starting point        | The operating system only, then a fresh clone of the repository                                                    |
+| Dates                 | 14–15 October 2026 (clean install); 16 October 2026 (branch changes)                                               |
+| Instructions followed | This manual, as written, from Prerequisites to Step 4, once for each branch: Casuarina, Palmerston and Darwin City |
+
+**Results by step**
+
+| Step                                | Result                        | Notes                                                                                                                                                                                                                                      |
+|-------------------------------------|-------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Prerequisites                       | Passed                        | Workload installed through the Visual Studio Installer                                                                                                                                                                                     |
+| Step 1 — Download the project       | Passed                        | Fresh clone from GitHub                                                                                                                                                                                                                    |
+| Step 2 — Choose the branch location | Passed for all three branches | First run as Casuarina, the default. `BranchCode` was then changed to `PAL` and the application restarted; the header showed Palmerston Library (Figure 1). It was then changed to `DRW`; the header showed Darwin City Library (Figure 2) |
+| Step 3 — Open the solution and run  | Passed after two fixes        | A package vulnerability warning and an antivirus false positive, both described below                                                                                                                                                      |
+| Step 4 — Confirm it worked          | Passed                        | Database created, migrated and seeded automatically with no manual commands; the site then ran normally in a modern browser                                                                                                                |
+
+![The application running on the virtual machine after the branch was changed to PAL, with Palmerston Library in the header](screenshots/vm-palmerston.png)
+
+*Figure 1 — The application running on the virtual machine after the branch was changed to PAL, with Palmerston Library in the header*
+
+![The application running on the virtual machine after the branch was changed to DRW, signed in as Reception, with Darwin City Library in the header](screenshots/vm-darwin.png)
+
+*Figure 2 — The application running on the virtual machine after the branch was changed to DRW, signed in as Reception, with Darwin City Library in the header*
+
+**Issues found and how each was handled**
+
+| Issue                            | What happened                                                                                                                                                  | How it was handled                                                                                                                                                                                                    |
+|----------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Vulnerable package               | A high-severity vulnerability warning on System.Security.Cryptography.Pkcs 9.0.11, pulled in indirectly through the SQL Server provider                        | Fixed in the code. The patched version 10.0.13 is now referenced directly in the project, so the warning no longer appears. The warning was fixed rather than suppressed                                              |
+| Antivirus false positive         | Windows Defender quarantined QuestPdfSkia.dll, QuestPDF’s graphics library used for PDF reports, and the build failed with a misleading “file not found” error | Not a code problem. The fix, a folder exclusion and restoring the file, is in Troubleshooting                                                                                                                         |
+| Default browser                  | The site opened in Internet Explorer, the Windows Server default, which does not render the interface                                                          | Documented under Prerequisites: use Edge, Chrome or Firefox                                                                                                                                                           |
+| Visual Studio Hot Reload message | After the branch change, Visual Studio logged an internal Hot Reload error (“No pending webSession for web server”)                                            | A Visual Studio tooling message, not an application error. It was marked recoverable and the site started normally. If F5 ever fails to open the site, Ctrl+F5 runs it without Hot Reload; this is in Troubleshooting |
+
+**Outcome.** With those points addressed, a person following this manual on a clean Windows machine ends up with a working system and needs no steps beyond the ones written here. Changing the branch needed nothing beyond the one setting in Step 2, which is what the brief asks for: every location follows the same instructions.
 
 ## Troubleshooting
 
-### I changed the seed data, but nothing's different
+| Problem                                                                                                       | Cause                                                                                                                                 | Fix                                                                                                                                                                                                                                                 |
+|---------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Build fails naming `QuestPdfSkia.dll` and "a virus or potentially unwanted software" (`MSB3021` or `MSB3030`) | Windows Defender false positive on QuestPDF's graphics library, used for PDF reports. *Found during the virtual machine test.*        | Add `%userprofile%\.nuget\packages` as a folder exclusion under **Windows Security → Virus & threat protection → Manage settings → Exclusions**. Restore the file from **Protection history**, or run `dotnet nuget locals all --clear` and rebuild |
+| Pages look broken or unstyled                                                                                 | Opened in Internet Explorer, the Windows Server default                                                                               | Copy the address into Edge, Chrome or Firefox                                                                                                                                                                                                       |
+| Seed data changes are not appearing                                                                           | Seeding only runs when the database is first created                                                                                  | Delete the database and press F5 again (steps below)                                                                                                                                                                                                |
+| LocalDB connection errors                                                                                     | LocalDB missing or stopped                                                                                                            | Run `sqllocaldb info`; if unrecognised, add the ASP.NET workload. If stopped, run `sqllocaldb start mssqllocaldb`                                                                                                                                   |
+| "Unknown branch code" at startup                                                                              | `Library:BranchCode` does not match a branch                                                                                          | Use `CAS`, `PAL` or `DRW`; the message lists them                                                                                                                                                                                                   |
+| Certificate warning over HTTPS                                                                                | Development certificate not trusted                                                                                                   | Run `dotnet dev-certs https --trust`, or pick the **http** launch profile                                                                                                                                                                           |
+| Port already in use                                                                                           | Another copy is running on port 5105 or 7009                                                                                          | Close it, or change the ports in `Properties/launchSettings.json`                                                                                                                                                                                   |
+| Visual Studio logs “No pending webSession for web server”, or the site does not open after F5                 | An internal Visual Studio Hot Reload glitch, not an application error. Seen once on the virtual machine, where the site still started | Press Ctrl+F5 to run without debugging, or turn off Hot Reload under Tools → Options → Debugging → .NET / C++ Hot Reload                                                                                                                            |
 
-This is the single most common point of confusion with this project.
+**Resetting the database to its original state:**
 
-**Seeding only runs the first time the database is created.** EF Core checks whether the database already exists; if it does, seeding is skipped entirely, no matter what you've changed in `Data/SeedData.cs` or `Data/IdentitySeed.cs`. You have to delete the database so the app creates (and seeds) it fresh on the next run.
+1.  In Visual Studio, open **View → SQL Server Object Explorer**.
 
-**To delete the database in Visual Studio:**
+2.  Expand `(localdb)\MSSQLLocalDB` → **Databases**.
 
-1. Open **View → SQL Server Object Explorer**.
-2. Expand **`(localdb)\MSSQLLocalDB`** → **Databases**.
-3. Find the database - its name starts with `aspnet-LibrarySystem-` (the exact name is in `appsettings.json` under `ConnectionStrings:DefaultConnection`, after `Database=`).
-4. Right-click it → **Delete**. If prompted, tick **"Close existing connections to the selected database"**.
-5. Press **F5** to run the app again. It recreates the database, reapplies migrations, and reseeds from scratch.
+3.  Right-click the database whose name starts with `aspnet-LibrarySystem-` and choose **Delete**.
 
-If the database doesn't appear in SQL Server Object Explorer (for example, LocalDB isn't registered as a server there yet), click **Add SQL Server**, choose **Local**, and select `(localdb)\MSSQLLocalDB` from the list first.
+4.  Tick **Close existing connections** and click **OK**.
 
-**Command-line alternative**, from the project folder, with the [EF Core CLI tool](https://learn.microsoft.com/ef/core/cli/dotnet) installed (`dotnet tool install --global dotnet-ef` if you don't have it):
+5.  Press **F5**. A fresh database is created and seeded.
 
-```
-dotnet ef database drop
-```
-
-Confirm when prompted, then run the app again.
-
-### LocalDB connection problems
-
-Symptoms: an exception on startup mentioning `(localdb)\mssqllocaldb`, "a network-related or instance-specific error", or "cannot open database".
-
-- **Confirm LocalDB is actually installed**: open a terminal and run `sqllocaldb info`. You should see `MSSQLLocalDB` listed. If the command isn't recognised at all, LocalDB isn't installed - reinstall via the Visual Studio Installer's "ASP.NET and web development" workload (see [What you need](#what-you-need) above).
-- **Confirm the instance is running**: `sqllocaldb info mssqllocaldb`. If its state isn't "Running", start it with `sqllocaldb start mssqllocaldb`.
-- **Corrupted instance**: as a last resort, `sqllocaldb stop mssqllocaldb` followed by `sqllocaldb delete mssqllocaldb` removes the instance entirely; it's recreated automatically the next time anything connects to `(localdb)\mssqllocaldb`, including this app on its next run.
-- The connection string itself (`ConnectionStrings:DefaultConnection` in `appsettings.json`) shouldn't need to change on a standard Visual Studio + LocalDB setup - if you've edited it, reverting to the version in source control is the fastest fix.
-
-### Unknown branch code at startup
-
-If you see an error on startup like:
-
-```
-InvalidOperationException: Configured branch code 'XYZ' (Library:BranchCode in appsettings.json) does not match any seeded branch. Valid codes: CAS, PAL, DRW.
-```
-
-`Library:BranchCode` in `appsettings.json` is set to something that isn't one of the three seeded branch codes. Fix the typo (valid values are listed in the error itself) and run again - see [Setting which branch this installation represents](#setting-which-branch-this-installation-represents) above.
-
-### Browser shows a certificate warning, or the page won't load over HTTPS
-
-The first time an ASP.NET Core app runs with HTTPS on a machine, the local development certificate may not yet be trusted. From a terminal:
-
-```
-dotnet dev-certs https --trust
-```
-
-Accept the prompt that appears, then run the app again. Alternatively, choose the **http** launch profile instead of **https** in Visual Studio's run-button dropdown - the app works identically over plain HTTP for local development.
-
-### Build fails with "contains a virus or potentially unwanted software"
-
-Symptoms: the build fails with `MSB3021` or `MSB3030`, naming `QuestPdfSkia.dll` and saying it "contains a virus or potentially unwanted software" or that the file could not be copied/found.
-
-This is **Windows Defender quarantining a false positive**. `QuestPdfSkia.dll` is a legitimate native graphics binary (Skia) bundled inside the QuestPDF NuGet package, used to generate the PDF reports - it is sometimes flagged incorrectly by Defender's heuristics, especially right after it's extracted into the NuGet package cache on a brand-new machine.
-
-To fix it:
-
-1. **Exclude the NuGet package cache from Defender**, so it stops re-scanning (and re-quarantining) files there: open **Windows Security → Virus & threat protection → Manage settings → Add or remove exclusions**, and add the folder `%userprofile%\.nuget\packages` as a **Folder** exclusion.
-2. **Restore the quarantined file**: open **Windows Security → Virus & threat protection → Protection history**, find the entry for `QuestPdfSkia.dll`, and choose **Restore** (or **Allow on device**).
-   - If it's no longer listed there (Defender can delete rather than quarantine), instead clear the NuGet cache and let it restore fresh now that the exclusion is in place: run `dotnet nuget locals all --clear` from a terminal, then rebuild - NuGet re-downloads and re-extracts the package and the exclusion from step 1 keeps Defender from touching it this time.
-3. **Rebuild** the solution.
-
-### "Port already in use" on startup
-
-Another running copy of the app (or something else) is already using port 5105 or 7009. Stop any other running instance of the app (check the Visual Studio **Debug → Windows → ... ** or just close other instances of this solution), or edit the ports in `Properties/launchSettings.json` if you specifically need to run two copies side by side.
+The command-line equivalent is `dotnet ef database drop`.
